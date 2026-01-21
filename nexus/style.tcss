@@ -1,0 +1,237 @@
+/* Tokyo Night inspired theme base */
+
+/* --- STRUCTURE --- */
+
+/* App/Screen Layout */
+Screen {
+    /* Default fallback */
+    background: #101010;
+    color: #c0caf5;
+}
+
+/* Header */
+#header {
+    height: 4;
+    dock: top;
+    padding: 0 1;
+}
+
+#header-left {
+    width: 1fr;
+    content-align: left middle;
+}
+
+#header-right {
+    width: 1fr;
+    content-align: right middle;
+}
+
+#tool-description {
+    height: 1;
+    content-align: center middle;
+    text-style: bold;
+}
+
+/* Main Container */
+#main-container {
+    height: 1fr;
+    /* Borders defined in theme */
+}
+
+/* Panes */
+#left-pane {
+    width: 30%;
+    height: 100%;
+    /* Border defined in theme */
+}
+
+#right-pane {
+    width: 70%;
+    height: 100%;
+}
+
+.pane-header {
+    height: 1;
+    text-style: underline;
+    padding: 0 1;
+}
+
+.pane-header-container {
+    height: 1;
+    /* Border defined in theme */
+}
+
+.pane-header-right {
+    width: 1fr;
+    content-align: right middle;
+    padding: 0 1;
+}
+
+/* Lists */
+ListView {
+    border: none;
+    padding: 0 1;
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+ListItem {
+    padding: 0 1;
+}
+
+.list-item {
+    height: 1;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+}
+
+.category-badge {
+    text-style: bold;
+    padding: 0 1;
+    margin-right: 1;
+}
+
+#custom-footer {
+    height: 4;
+    dock: bottom;
+    padding: 0 1;
+}
+
+.hidden {
+    display: none;
+}
+
+
+/* --- THEMES (SKINS) --- */
+
+/* 1. DARK THEME */
+.theme-dark {
+    background: #101010;
+    color: #c0caf5;
+}
+
+.theme-dark ListView, 
+.theme-dark ListItem {
+    background: #101010;
+}
+
+.theme-dark #header, 
+.theme-dark .pane-header, 
+.theme-dark #custom-footer {
+    background: #101010;
+    color: #c0caf5;
+}
+
+.theme-dark #header-right,
+.theme-dark .pane-header-container {
+    border-bottom: solid #c0caf5; /* Header-right is fully bordered? checking old code: border: solid */
+}
+
+.theme-dark #header-right { border: solid #c0caf5; }
+.theme-dark #main-container { border-top: solid #c0caf5; border-bottom: solid #c0caf5; }
+.theme-dark #left-pane { border-right: solid #c0caf5; }
+.theme-dark .pane-header-container { border-bottom: solid #c0caf5; }
+.theme-dark #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
+
+/* Highlight - Dark */
+.theme-dark ListItem.--highlight {
+    background: #ffff00;
+    color: #000000;
+    text-style: bold;
+}
+.theme-dark ListItem.--highlight Label, 
+.theme-dark ListItem.--highlight .list-item {
+    color: #000000;
+}
+
+/* Categories - Dark */
+.theme-dark .category-DEV { color: #7aa2f7; }
+.theme-dark .category-AI { color: #bb9af7; }
+.theme-dark .category-MEDIA { color: #9ccc65; }
+.theme-dark .category-NET { color: #ff9e64; }
+
+
+/* 2. STORM THEME */
+.theme-storm {
+    background: #24283b;
+    color: #c0caf5;
+}
+
+.theme-storm ListView, 
+.theme-storm ListItem {
+    background: #24283b;
+}
+
+.theme-storm #header, 
+.theme-storm .pane-header, 
+.theme-storm #custom-footer {
+    background: #24283b;
+    color: #c0caf5;
+}
+
+.theme-storm #header-right { border: solid #c0caf5; }
+.theme-storm #main-container { border-top: solid #c0caf5; border-bottom: solid #c0caf5; }
+.theme-storm #left-pane { border-right: solid #c0caf5; }
+.theme-storm .pane-header-container { border-bottom: solid #c0caf5; }
+.theme-storm #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
+
+/* Highlight - Storm */
+.theme-storm ListItem.--highlight {
+    background: #ffff00;
+    color: #000000;
+    text-style: bold;
+}
+.theme-storm ListItem.--highlight Label, 
+.theme-storm ListItem.--highlight .list-item {
+    color: #000000;
+}
+
+/* Categories - Storm */
+.theme-storm .category-DEV { color: #7aa2f7; }
+.theme-storm .category-AI { color: #bb9af7; }
+.theme-storm .category-MEDIA { color: #9ccc65; }
+.theme-storm .category-NET { color: #ff9e64; }
+
+
+/* 3. LIGHT THEME */
+.theme-light {
+    background: #d5d6db;
+    color: #343b58;
+}
+
+.theme-light ListView, 
+.theme-light ListItem {
+    background: #d5d6db;
+}
+
+.theme-light #header, 
+.theme-light .pane-header, 
+.theme-light #custom-footer {
+    background: #d5d6db;
+    color: #343b58;
+}
+
+.theme-light #header-right { border: solid #343b58; }
+.theme-light #main-container { border-top: solid #343b58; border-bottom: solid #343b58; }
+.theme-light #left-pane { border-right: solid #343b58; }
+.theme-light .pane-header-container { border-bottom: solid #343b58; }
+.theme-light #tool-description { color: #8c4351; border-top: solid #343b58; }
+
+/* Highlight - Light */
+.theme-light ListItem.--highlight {
+    background: #ffff00;
+    color: #000000;
+    text-style: bold;
+}
+.theme-light ListItem.--highlight Label, 
+.theme-light ListItem.--highlight .list-item {
+    color: #000000;
+}
+
+/* Categories - Light */
+.theme-light .category-DEV { color: #3d59a1; }
+.theme-light .category-AI { color: #8c4351; }
+.theme-light .category-MEDIA { color: #487e02; }
+.theme-light .category-NET { color: #ff9e64; }
