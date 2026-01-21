@@ -30,22 +30,22 @@ requires_project = true
 label = "Gemini"
 category = "AI"
 description = "Google Gemini-CLI dev tool"
-command = "gemini-cli"
-requires_project = false
+command = "gemini" 
+requires_project = true
 
 [[tool]]
 label = "Toad"
 category = "AI"
 description = "Unified terminal AI interface"
 command = "toad"
-requires_project = false
+requires_project = true
 
 [[tool]]
 label = "Viu"
 category = "MEDIA"
 description = "Browser anime experience"
 command = "viu"
-requires_project = true
+requires_project = false 
 
 [[tool]]
 label = "Manga-Tui"
@@ -56,7 +56,21 @@ requires_project = false
 
 [[tool]]
 label = "WifiTui"
-category = "NET"
+category = "UTIL"
 description = "WiFi network manager"
 command = "wifitui"
+requires_project = false
+
+[[tool]]
+label = "Fastfetch"
+category = "UTIL"
+description = "System information tool"
+command = "fastfetch"
+requires_project = false
+
+[[tool]]
+label = "Btop"
+category = "UTIL"
+description = "Resource monitor"
+command = "btop"
 requires_project = false

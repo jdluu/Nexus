@@ -13,7 +13,7 @@ dependencies = [
 nexus = "nexus.app:main"
 
 [tool.nexus]
-priority_terminals = ["ghostty", "gnome-terminal", "xterm", "wezterm", "kitty", "alacritty"]
+priority_terminals = ["kitty", "ghostty", "gnome-terminal", "xterm", "wezterm", "alacritty"]
 
 [build-system]
 requires = ["hatchling"]
