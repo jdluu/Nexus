@@ -1,0 +1,62 @@
+[[tool]]
+label = "Neovim"
+category = "DEV"
+description = "Hyperextensible text editor"
+command = "nvim"
+requires_project = true
+
+[[tool]]
+label = "Fresh"
+category = "DEV"
+description = "A terminal text editor"
+command = "fresh"
+requires_project = true
+
+[[tool]]
+label = "Lazygit"
+category = "DEV"
+description = "Git TUI interface"
+command = "lazygit"
+requires_project = true
+
+[[tool]]
+label = "Euporie"
+category = "DEV"
+description = "Jupyter Notebooks in terminal"
+command = "euporie"
+requires_project = true
+
+[[tool]]
+label = "Gemini"
+category = "AI"
+description = "Google Gemini-CLI dev tool"
+command = "gemini-cli"
+requires_project = false
+
+[[tool]]
+label = "Toad"
+category = "AI"
+description = "Unified terminal AI interface"
+command = "toad"
+requires_project = false
+
+[[tool]]
+label = "Viu"
+category = "MEDIA"
+description = "Browser anime experience"
+command = "viu"
+requires_project = true
+
+[[tool]]
+label = "Manga-Tui"
+category = "MEDIA"
+description = "Terminal manga reader"
+command = "manga-tui"
+requires_project = false
+
+[[tool]]
+label = "WifiTui"
+category = "NET"
+description = "WiFi network manager"
+command = "wifitui"
+requires_project = false
