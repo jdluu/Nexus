@@ -1,7 +1,13 @@
 from textual.widgets import Static, ListItem, Label
 from textual.containers import Horizontal
-from nexus.config import CATEGORY_COLORS
+from nexus.config import CATEGORY_COLORS, USE_NERD_FONTS, CATEGORY_ICONS
 from nexus.models import Tool, Project
+
+"""Custom list items for the Nexus TUI.
+
+Defines the specialized ListItem widgets used to display tools, categories,
+and projects with specific formatting and visual indicators.
+"""
 
 class ToolItem(Static):
     """A widget representing a tool in the list."""
@@ -24,7 +30,7 @@ class ToolItem(Static):
             A string representation of the tool label prefixed with '> '.
         """
         label = self.tool_info.label
-        return f"> {label}"
+        return f"> {label} | [dim]{self.tool_info.description}[/]"
 
     def on_mount(self) -> None:
         """Called when the widget is mounted."""
@@ -128,4 +134,16 @@ class CategoryListItem(ListItem):
             **kwargs: Additional arguments.
         """
         self.category_id = category
-        super().__init__(Label(category), **kwargs)
+        super().__init__(**kwargs)
+
+    def render(self) -> str:
+        """Renders the category item with a colored badge."""
+        icon = ""
+        if USE_NERD_FONTS:
+             icon = f"{CATEGORY_ICONS.get(self.category_id, '')} "
+             
+        if self.category_id == "ALL":
+             return f"{icon}ALL"
+             
+        color = CATEGORY_COLORS.get(self.category_id, "white")
+        return f"[{color}]◼[/] {icon}{self.category_id}"

@@ -3,24 +3,68 @@ import shutil
 from pathlib import Path
 from nexus.models import Tool
 
+"""Configuration management for the Nexus application.
+
+Handles loading tool definitions from TOML, determining terminal preferences,
+and defining visual assets like colors and icons.
+"""
+
 PROJECT_ROOT = Path("/home/jdluu/CS Stuff")
 
-# Load tools from the adjacent tools.toml file
-CONFIG_PATH = Path(__file__).parent / "tools.toml"
+# Config Paths (Priority Order)
+USER_CONFIG_PATH = Path.home() / ".config" / "nexus" / "tools.toml"
+LOCAL_CONFIG_PATH = Path(__file__).parent / "tools.local.toml"
+DEFAULT_CONFIG_PATH = Path(__file__).parent / "tools.toml"
 
-if CONFIG_PATH.exists():
-    with open(CONFIG_PATH, "rb") as f:
-        _data = tomllib.load(f)
-        TOOLS = [Tool(**t) for t in _data.get("tool", [])]
-else:
-    TOOLS = []
+def load_tools() -> list[Tool]:
+    """Loads and merges tools from multiple config sources.
+    
+    Priority (Higher overrides Lower):
+    1. User Global (~/.config/nexus/tools.toml)
+    2. Repo Local (nexus/tools.local.toml)
+    3. Default (nexus/tools.toml)
+    """
+    tools_map = {}
+    
+    # helper to load and merge
+    def merge_from_file(path: Path):
+        if path.exists():
+            try:
+                with open(path, "rb") as f:
+                    data = tomllib.load(f)
+                    for t in data.get("tool", []):
+                        # Use label as key for merging/overriding
+                        tool = Tool(**t)
+                        tools_map[tool.label] = tool
+            except Exception:
+                pass
+
+    # Load in reverse priority order (Default -> Local -> Global)
+    # This way, later loads overwrite earlier ones in the map
+    merge_from_file(DEFAULT_CONFIG_PATH)
+    merge_from_file(LOCAL_CONFIG_PATH)
+    merge_from_file(USER_CONFIG_PATH)
+    
+    return list(tools_map.values())
+
+TOOLS = load_tools()
 
 
 CATEGORY_COLORS = {
     "DEV": "blue",
     "AI": "purple",
     "MEDIA": "green",
-    "NET": "orange",
+    "UTIL": "orange",
+}
+
+USE_NERD_FONTS = True
+
+CATEGORY_ICONS = {
+    "DEV": "",   # fh-fa-code_fork
+    "AI": "",    # fh-fa-microchip (or similar brain/chip icon)
+    "MEDIA": "", # fh-fa-video_camera
+    "UTIL": "",  # fh-fa-wrench
+    "ALL": "",   # fh-fa-list
 }
 
 def get_preferred_terminal() -> str | None:
@@ -35,7 +79,7 @@ def get_preferred_terminal() -> str | None:
     """
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     
-    terminals = ["ghostty", "gnome-terminal", "xterm"] # Defaults
+    terminals = ["kitty", "ghostty", "gnome-terminal", "xterm"] # Defaults
     
     if pyproject_path.exists():
         try:
@@ -48,8 +92,9 @@ def get_preferred_terminal() -> str | None:
             pass # Fallback to defaults on error
             
     for term in terminals:
-        if shutil.which(term):
-            return term
+        path = shutil.which(term)
+        if path:
+            return path
             
     return None
 
