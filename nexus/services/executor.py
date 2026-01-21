@@ -1,5 +1,6 @@
 import subprocess
 import shlex
+import shutil
 from pathlib import Path
 from nexus import config
 
@@ -14,32 +15,15 @@ def launch_tool(command: str, project_path: Path | None = None) -> bool:
     Returns:
         True if the tool was successfully launched, False otherwise.
     """
-    if not config.TERMINAL:
-        return False
-
     full_command = command
     if project_path:
         # Construct command to cd into project path first
         full_command = f"cd {shlex.quote(str(project_path))} && {command}"
     
-    # Keep the shell interactive at the end
-    final_cmd_str = f"bash -c '{full_command}; exec bash'"
-    
-    launch_args = [config.TERMINAL]
-    
-    # Terminal-specific argument handling
-    if "ghostty" in config.TERMINAL:
-         launch_args.extend(["--new-tab", "-e", final_cmd_str])
-    elif "gnome-terminal" in config.TERMINAL:
-        launch_args.extend(["--", "bash", "-c", f"{full_command}; exec bash"])
-    elif "kitty" in config.TERMINAL:
-        launch_args.extend(["--detach", "-e", "bash", "-c", f"{full_command}; exec bash"])
-    else:
-        # Standard -e fallback (xterm, alacritty, etc)
-        launch_args.extend(["-e", "bash", "-c", f"{full_command}; exec bash"])
-
     try:
-        subprocess.Popen(launch_args)
+        # Run synchronously in the current terminal (in-place)
+        # shell=True allows using features like '&&' and environment variable expansion
+        subprocess.run(full_command, shell=True, check=False)
         return True
-    except (FileNotFoundError, OSError):
+    except Exception:
         return False

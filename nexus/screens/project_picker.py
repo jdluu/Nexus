@@ -10,9 +10,10 @@ from nexus.models import Tool
 import asyncio
 
 class ProjectPicker(Screen):
-    """Screen for selecting a project.
+    """Screen for selecting a project directory.
 
-    Displays a searchable list of projects found in the root directory.
+    Displays a searchable list of projects found in the configured root directory.
+    Allows creating new projects (placeholder) or selecting an existing one.
     """
 
     def __init__(self, selected_tool: Tool, **kwargs):
@@ -25,6 +26,12 @@ class ProjectPicker(Screen):
         super().__init__(**kwargs)
         self.selected_tool = selected_tool
         self.projects = []
+        
+    BINDINGS = [
+        ("down", "cursor_down", "Next Item"),
+        ("up", "cursor_up", "Previous Item"),
+        ("enter", "select_current", "Select"),
+    ]
 
     def compose(self) -> ComposeResult:
         """Composes the screen layout."""
@@ -89,8 +96,32 @@ class ProjectPicker(Screen):
             
         project = item.project_data
         if project:
-            if launch_tool(self.selected_tool.command, project.path):
-                self.app.notify(f"Launched {self.selected_tool.label} in {project.name}")
-                self.app.pop_screen()
-            else:
-                 self.app.notify(f"Failed to launch {self.selected_tool.label}. Is a supported terminal installed?", severity="error")
+            with self.app.suspend():
+                if launch_tool(self.selected_tool.command, project.path):
+                     pass
+                else:
+                     self.app.notify(f"Failed to launch {self.selected_tool.label}", severity="error")
+            self.app.refresh()
+            self.app.pop_screen()
+
+    def action_cursor_down(self) -> None:
+        """Moves selection down in the project list."""
+        project_list = self.query_one("#project-list", ListView)
+        if project_list.index is None:
+            project_list.index = 0
+        else:
+            project_list.index = min(len(project_list.children) - 1, project_list.index + 1)
+
+    def action_cursor_up(self) -> None:
+        """Moves selection up in the project list."""
+        project_list = self.query_one("#project-list", ListView)
+        if project_list.index is None:
+            project_list.index = 0
+        else:
+            project_list.index = max(0, project_list.index - 1)
+
+    def action_select_current(self) -> None:
+        """Selects the currently highlighted item."""
+        project_list = self.query_one("#project-list", ListView)
+        if project_list.index is not None:
+             self.on_list_view_selected(ListView.Selected(project_list, project_list.children[project_list.index]))
