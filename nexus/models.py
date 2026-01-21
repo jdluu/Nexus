@@ -2,18 +2,24 @@ from pydantic import BaseModel
 from pathlib import Path
 from typing import Literal
 
+"""Data models for the Nexus application.
+
+Defines the Pydantic models used for validation and typehinting of
+tools and projects within the application.
+"""
+
 class Tool(BaseModel):
     """Represents a command-line tool available in Nexus.
 
     Attributes:
         label: The display name of the tool.
-        category: The category the tool belongs to (DEV, AI, MEDIA, NET).
+        category: The category the tool belongs to (DEV, AI, MEDIA, UTIL).
         description: A brief description of the tool's purpose.
         command: The shell command to execute.
         requires_project: True if the tool needs a project directory to run.
     """
     label: str
-    category: Literal["DEV", "AI", "MEDIA", "NET"]
+    category: Literal["DEV", "AI", "MEDIA", "UTIL"]
     description: str
     command: str
     requires_project: bool

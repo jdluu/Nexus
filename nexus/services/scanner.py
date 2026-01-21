@@ -2,6 +2,12 @@ import asyncio
 from pathlib import Path
 from nexus.models import Project
 
+"""Service for scanning the filesystem.
+
+Provides asynchronous methods to discovery projects and git repositories
+within the configured project root.
+"""
+
 async def scan_projects(root_path: Path) -> list[Project]:
     """Scans the root path for project directories asynchronously.
 
