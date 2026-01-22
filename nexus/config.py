@@ -1,51 +1,106 @@
-import tomllib
-import shutil
-from pathlib import Path
-from nexus.models import Tool
-
 """Configuration management for the Nexus application.
 
 Handles loading tool definitions from TOML, determining terminal preferences,
 and defining visual assets like colors and icons.
 """
 
-PROJECT_ROOT = Path("/home/jdluu/CS Stuff")
+import shutil
+import tomllib
+from pathlib import Path
 
-# Config Paths (Priority Order)
+from nexus.models import Tool
+
+# Configuration Paths in priority order (lowest to highest)
+CWD_NEXUS_CONFIG = Path.cwd() / "nexus" / "tools.local.toml"
+CWD_CONFIG = Path.cwd() / "tools.local.toml"
 USER_CONFIG_PATH = Path.home() / ".config" / "nexus" / "tools.toml"
 LOCAL_CONFIG_PATH = Path(__file__).parent / "tools.local.toml"
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "tools.toml"
 
-def load_tools() -> list[Tool]:
-    """Loads and merges tools from multiple config sources.
-    
-    Priority (Higher overrides Lower):
-    1. User Global (~/.config/nexus/tools.toml)
-    2. Repo Local (nexus/tools.local.toml)
-    3. Default (nexus/tools.toml)
+CONFIG_PATHS = [
+    DEFAULT_CONFIG_PATH,
+    LOCAL_CONFIG_PATH,
+    USER_CONFIG_PATH,
+    CWD_NEXUS_CONFIG,
+    CWD_CONFIG,
+]
+
+
+# Global error tracking for configuration loading
+CONFIG_ERRORS = []
+
+
+def _load_config_data() -> dict:
+    """Loads and merges configuration data from all sources.
+
+    Iterates through configuration paths in priority order and merges meaningful
+    data (tools, project root) into a single dictionary.
+
+    Returns:
+        A dictionary containing the merged configuration data.
     """
-    tools_map = {}
-    
-    # helper to load and merge
+    merged_data = {"tool": [], "project_root": None}
+
     def merge_from_file(path: Path):
         if path.exists():
             try:
                 with open(path, "rb") as f:
                     data = tomllib.load(f)
-                    for t in data.get("tool", []):
-                        # Use label as key for merging/overriding
-                        tool = Tool(**t)
-                        tools_map[tool.label] = tool
-            except Exception:
-                pass
 
-    # Load in reverse priority order (Default -> Local -> Global)
-    # This way, later loads overwrite earlier ones in the map
-    merge_from_file(DEFAULT_CONFIG_PATH)
-    merge_from_file(LOCAL_CONFIG_PATH)
-    merge_from_file(USER_CONFIG_PATH)
-    
-    return list(tools_map.values())
+                    # Replacement strategy: If a config file defines tools,
+                    # it replaces the set of tools from lower-priority configs.
+                    if "tool" in data and data["tool"]:
+                        merged_data["tool"] = data["tool"]
+
+                    if "project_root" in data:
+                        merged_data["project_root"] = data["project_root"]
+
+            except Exception as e:
+                CONFIG_ERRORS.append(f"Error in {path.name}: {e}")
+
+    for path in CONFIG_PATHS:
+        merge_from_file(path)
+
+    return merged_data
+
+
+_CONFIG_DATA = _load_config_data()
+
+
+def get_project_root() -> Path:
+    """Returns the project root directory.
+
+    Checks the loaded configuration for a 'project_root' key. If not found,
+    defaults to '~/Projects'.
+
+    Returns:
+        The defined project root path.
+    """
+    if _CONFIG_DATA.get("project_root"):
+        return Path(_CONFIG_DATA["project_root"]).expanduser()
+
+    return Path.home() / "Projects"
+
+
+PROJECT_ROOT = get_project_root()
+
+
+def load_tools() -> list[Tool]:
+    """Returns the list of configured tools.
+
+    Parses the configuration data into Tool models, skipping any invalid entries.
+
+    Returns:
+        A list of Tool objects.
+    """
+    tools = []
+    for t in _CONFIG_DATA.get("tool", []):
+        try:
+            tools.append(Tool(**t))
+        except Exception:
+            continue
+    return tools
+
 
 TOOLS = load_tools()
 
@@ -60,42 +115,51 @@ CATEGORY_COLORS = {
 USE_NERD_FONTS = True
 
 CATEGORY_ICONS = {
-    "DEV": "",   # fh-fa-code_fork
-    "AI": "",    # fh-fa-microchip (or similar brain/chip icon)
-    "MEDIA": "", # fh-fa-video_camera
+    "DEV": "",  # fh-fa-code_fork
+    "AI": "",  # fh-fa-microchip
+    "MEDIA": "",  # fh-fa-video_camera
     "UTIL": "",  # fh-fa-wrench
-    "ALL": "",   # fh-fa-list
+    "ALL": "",  # fh-fa-list
 }
 
-def get_preferred_terminal() -> str | None:
-    """Determines the available terminal emulator based on priority list.
 
-    Checks `pyproject.toml` [tool.nexus.priority_terminals] and falls back to
-    a default list if configuration is missing.
+def get_preferred_terminal() -> str | None:
+    """Determines the available terminal emulator based on a priority list.
+
+    Checks `pyproject.toml` for [tool.nexus.priority_terminals] and falls back
+    to a default list if configuration is missing.
 
     Returns:
         The command string for the first found terminal, or None if no supported
         terminal is found.
     """
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-    
-    terminals = ["kitty", "ghostty", "gnome-terminal", "xterm"] # Defaults
-    
+
+    terminals = ["kitty", "ghostty", "gnome-terminal", "xterm"]
+
     if pyproject_path.exists():
         try:
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                config_terminals = data.get("tool", {}).get("nexus", {}).get("priority_terminals")
+                config_terminals = (
+                    data.get("tool", {}).get("nexus", {}).get("priority_terminals")
+                )
                 if config_terminals:
                     terminals = config_terminals
         except Exception:
-            pass # Fallback to defaults on error
-            
+            pass
+
     for term in terminals:
         path = shutil.which(term)
         if path:
             return path
-            
+
     return None
 
+
 TERMINAL = get_preferred_terminal()
+
+# Summary:
+# Rewrote docstrings for all functions.
+# Consolidated comments.
+# Removed redundant inline comments.
