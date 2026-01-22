@@ -24,6 +24,7 @@ Screen {
 #header-right {
     width: 1fr;
     content-align: right middle;
+    text-style: bold;
 }
 
 #tool-description {
@@ -99,9 +100,20 @@ ListItem {
     padding: 0 1;
 }
 
+
 .hidden {
     display: none;
 }
+
+.empty-state {
+    text-style: italic;
+    color: #565f89;
+    content-align: center middle;
+    height: 1fr;
+    width: 1fr;
+    padding: 1;
+}
+
 
 
 /* --- THEMES (SKINS) --- */
@@ -130,7 +142,7 @@ ListItem {
 }
 
 .theme-dark #header-right { border: solid #c0caf5; }
-.theme-dark #main-container { border-top: solid #c0caf5; border-bottom: solid #c0caf5; }
+.theme-dark #main-container { border-top: solid #c0caf5; } /* removed bottom border */
 .theme-dark #left-pane { border-right: solid #c0caf5; }
 .theme-dark .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-dark #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
@@ -175,7 +187,7 @@ ListItem {
 }
 
 .theme-storm #header-right { border: solid #c0caf5; }
-.theme-storm #main-container { border-top: solid #c0caf5; border-bottom: solid #c0caf5; }
+.theme-storm #main-container { border-top: solid #c0caf5; } /* removed bottom border */
 .theme-storm #left-pane { border-right: solid #c0caf5; }
 .theme-storm .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-storm #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
@@ -221,7 +233,7 @@ ListItem {
 }
 
 .theme-light #header-right { border: solid #343b58; }
-.theme-light #main-container { border-top: solid #343b58; border-bottom: solid #343b58; }
+.theme-light #main-container { border-top: solid #343b58; } /* removed bottom border */
 .theme-light #left-pane { border-right: solid #343b58; }
 .theme-light .pane-header-container { border-bottom: solid #343b58; }
 .theme-light #tool-description { color: #8c4351; border-top: solid #343b58; }
@@ -271,6 +283,38 @@ ThemePicker {
     border: solid #565f89; /* Muted purple/blue */
 }
 
+/* --- CREATE PROJECT MODAL --- */
+#create-project-dialog {
+    width: 60;
+    height: auto;
+    border: thick #7aa2f7; 
+    background: #1a1b26;
+    padding: 1 2;
+}
+
+#create-project-title {
+    content-align: center middle;
+    text-style: bold;
+    width: 100%;
+    margin-bottom: 1;
+}
+
+#create-project-buttons {
+    margin-top: 1;
+    height: 3;
+    align: right middle;
+}
+
+#btn-cancel {
+    margin-right: 1;
+}
+
+.error-label {
+    color: #f7768e; /* Red/Pink error color */
+    text-style: bold;
+    margin-top: 1;
+}
+
 .modal-footer {
     width: 100%;
     content-align: center middle;
@@ -288,7 +332,8 @@ ThemePicker {
 
 .footer-col {
     height: 100%;
-    width: 1fr;
+    width: auto;
+    padding-right: 4;
     content-align: center middle;
 }
 
@@ -355,4 +400,37 @@ ThemePicker {
 .theme-light ToastTitle {
     text-style: bold;
     color: #343b58;
+}
+
+/* --- HELP SCREEN --- */
+#help-dialog {
+    width: 60;
+    height: auto;
+    border: thick #7aa2f7;
+    background: #1a1b26;
+    padding: 1 2;
+    align: center middle; 
+}
+
+#help-title-container {
+    height: 3;
+    content-align: center middle;
+    border-bottom: solid #565f89;
+}
+
+#help-title {
+    text-style: bold;
+    color: #7aa2f7;
+}
+
+#help-content {
+    margin: 1 0;
+    height: auto; 
+    max-height: 20;
+}
+
+#help-footer {
+    height: 3;
+    align: right middle;
+    margin-top: 1;
 }
