@@ -1,15 +1,15 @@
+# Default Configuration
+# You can override this by creating a `tools.local.toml` in this directory
+# or `~/.config/nexus/tools.toml`.
+
+# To set your project root (where Nexus looks for projects):
+# project_root = "~/Projects"
+
 [[tool]]
 label = "Neovim"
 category = "DEV"
 description = "Hyperextensible text editor"
 command = "nvim"
-requires_project = true
-
-[[tool]]
-label = "Fresh"
-category = "DEV"
-description = "A terminal text editor"
-command = "fresh"
 requires_project = true
 
 [[tool]]
@@ -20,57 +20,8 @@ command = "lazygit"
 requires_project = true
 
 [[tool]]
-label = "Euporie"
-category = "DEV"
-description = "Jupyter Notebooks in terminal"
-command = "euporie"
-requires_project = true
-
-[[tool]]
-label = "Gemini"
-category = "AI"
-description = "Google Gemini-CLI dev tool"
-command = "gemini" 
-requires_project = true
-
-[[tool]]
-label = "Toad"
-category = "AI"
-description = "Unified terminal AI interface"
-command = "toad"
-requires_project = true
-
-[[tool]]
-label = "Viu"
-category = "MEDIA"
-description = "Browser anime experience"
-command = "viu"
-requires_project = false 
-
-[[tool]]
-label = "Manga-Tui"
-category = "MEDIA"
-description = "Terminal manga reader"
-command = "manga-tui"
-requires_project = false
-
-[[tool]]
-label = "WifiTui"
+label = "Htop"
 category = "UTIL"
-description = "WiFi network manager"
-command = "wifitui"
-requires_project = false
-
-[[tool]]
-label = "Fastfetch"
-category = "UTIL"
-description = "System information tool"
-command = "fastfetch"
-requires_project = false
-
-[[tool]]
-label = "Btop"
-category = "UTIL"
-description = "Resource monitor"
-command = "btop"
+description = "Process viewer"
+command = "htop"
 requires_project = false
