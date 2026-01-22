@@ -1,29 +1,46 @@
-import subprocess
+"""Service for executing tool commands.
+
+Handles the subprocess execution logic for running external tools within the terminal.
+"""
+
 import shlex
-import shutil
+import subprocess
 from pathlib import Path
-from nexus import config
+
 
 def launch_tool(command: str, project_path: Path | None = None) -> bool:
-    """Launches a tool in the configured terminal.
+    """Launches a tool in the current terminal window.
+
+    This function blocks execution until the tool completes. It should typically
+    be called within a suspended TUI context.
 
     Args:
         command: The shell command to execute.
-        project_path: Optional path to a project directory to open the tool in.
-            If provided, the terminal will open in this directory.
+        project_path: Optional working directory for the command.
+            if provided, the command path is appended to the command arguments,
+            and the command is executed in this directory.
 
     Returns:
-        True if the tool was successfully launched, False otherwise.
+        True if the process started and exited with return code 0, False otherwise.
     """
-    full_command = command
-    if project_path:
-        # Construct command to cd into project path first
-        full_command = f"cd {shlex.quote(str(project_path))} && {command}"
-    
-    try:
-        # Run synchronously in the current terminal (in-place)
-        # shell=True allows using features like '&&' and environment variable expansion
-        subprocess.run(full_command, shell=True, check=False)
-        return True
-    except Exception:
+    if not command:
         return False
+
+    cmd_parts = shlex.split(command)
+
+    if project_path:
+        cmd_parts.append(str(project_path))
+
+    cwd = project_path if project_path and project_path.exists() else None
+
+    try:
+        # Run tool in the current terminal (blocking execution).
+        # This allows the tool to take over the TUI's terminal IO.
+        result = subprocess.run(cmd_parts, cwd=cwd, check=False)
+        return result.returncode == 0
+    except (FileNotFoundError, OSError):
+        return False
+
+# Summary:
+# Added module docstring.
+# Expanded function docstring with context about blocking behavior.

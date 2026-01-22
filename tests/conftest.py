@@ -1,4 +1,5 @@
-import pytest
+"""Pytest configuration and fixtures."""
+
 import sys
 from pathlib import Path
 
