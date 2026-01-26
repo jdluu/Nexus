@@ -17,8 +17,15 @@ from nexus.models import Tool
 from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
 
 
-
-log = get_logger(__name__)
+class SearchInput(Input):
+    """Custom input that doesn't consume navigation keys, letting them bubble."""
+    
+    def on_key(self, event: Key) -> None:
+        if event.key in ("up", "down", "enter", "escape"):
+            # Don't stop propagation, let screen bindings or on_key handle them
+            return
+        # Let default Input behavior handle characters, backspace, etc.
+        super().on_key(event)
 
 
 class ToolSelector(Screen[None]):
@@ -67,7 +74,7 @@ class ToolSelector(Screen[None]):
                 "**********************************\n Nexus Interface \n**********************************",
                 id="header-left",
             )
-            yield Input(placeholder="Search tools...", id="tool-search")
+            yield SearchInput(placeholder="Search tools...", id="tool-search")
 
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
@@ -189,9 +196,12 @@ class ToolSelector(Screen[None]):
     def select_all_category(self) -> None:
         """Selects the 'ALL' category in the list."""
         category_list = self.query_one("#category-list", ListView)
-        # Assuming ALL is always index 1 (FAVORITES is 0)
-        if category_list.index != 1:
-            category_list.index = 1
+        # Find the index of the ALL category
+        for idx, child in enumerate(category_list.children):
+            if isinstance(child, CategoryListItem) and child.category_id == "ALL":
+                if category_list.index != idx:
+                    category_list.index = idx
+                break
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Called when the search input changes.
@@ -223,27 +233,39 @@ class ToolSelector(Screen[None]):
         Args:
             event: The key event.
         """
-        # Explicitly handle Up/Down if search is focused (Input can eat them)
-        if self.query_one("#tool-search").has_focus:
-            if event.key == "down":
-                self.action_cursor_down()
-                event.stop()
-                return
-            elif event.key == "up":
-                self.action_cursor_up()
-                event.stop()
-                return
+        # Global Navigation Interception
+        if event.key == "down":
+            self.action_cursor_down()
+            event.stop()
+            return
+        elif event.key == "up":
+            self.action_cursor_up()
+            event.stop()
+            return
+        elif event.key == "enter":
+            self.action_launch_current()
+            event.stop()
+            return
+        elif event.key == "escape":
+            self.action_focus_search()
+            event.stop()
+            return
 
         # Numeric keys 1-9 for quick launch
         if event.key in "123456789":
-            idx = int(event.key) - 1
-            tool_list = self.query_one("#tool-list", ListView)
-            if idx < len(tool_list.children):
-                item = tool_list.children[idx]
-                if isinstance(item, ToolListItem):
-                    self.launch_tool_flow(item.tool_info)
-                    event.stop()
-                    return
+            # Only quick launch if not typing in search (or maybe always?)
+            # Let's say only if search is NOT focused, or if it's empty?
+            # User might want to type numbers in search.
+            search = self.query_one("#tool-search", SearchInput)
+            if not search.has_focus or not search.value:
+                idx = int(event.key) - 1
+                tool_list = self.query_one("#tool-list", ListView)
+                if idx < len(tool_list.children):
+                    item = tool_list.children[idx]
+                    if isinstance(item, ToolListItem):
+                        self.launch_tool_flow(item.tool_info)
+                        event.stop()
+                        return
 
     def refresh_tools(self) -> None:
         """Refreshes tool list based on current selection and search text."""
