@@ -10,16 +10,26 @@ Nexus is a terminal interface designe for creating efficient development workflo
 
 ## Installation
 
-1.  Clone the repository and explore the directory.
+Nexus can be installed globally using the `uv` tool manager directly from the source repository.
 
-2.  Install the application globally via `uv`:
+```bash
+uv tool install git+https://github.com/jdluu/Nexus
+```
+
+To update an existing installation:
+```bash
+uv tool install --force git+https://github.com/jdluu/Nexus
+```
+
+### Installation from Source
+
+If you prefer to install from a local clone:
+
+1.  Clone the repository and navigate to the project directory.
+
+2.  Install the application locally:
     ```bash
     uv tool install .
-    ```
-
-3.  To update the installation after pulling changes:
-    ```bash
-    uv tool install --force .
     ```
 
 ## Cross Platform Support
