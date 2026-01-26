@@ -9,7 +9,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
 
-class HelpScreen(ModalScreen):
+class HelpScreen(ModalScreen[None]):
     """A modal screen that displays help and key bindings."""
 
     CSS_PATH = "../style.tcss"

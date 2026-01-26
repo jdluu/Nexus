@@ -11,11 +11,17 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label, ListView
 
-from nexus.config import TOOLS
+from nexus.config import get_tools
+from nexus.logger import get_logger
+from nexus.models import Tool
 from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
 
 
-class ToolSelector(Screen):
+
+log = get_logger(__name__)
+
+
+class ToolSelector(Screen[None]):
     """Screen for selecting and launching tools.
 
     Displays a list of tools categorized by type. Allows searching,
@@ -117,7 +123,7 @@ class ToolSelector(Screen):
         """Opens the theme picker modal."""
 
         # Helper to apply theme temporarily or permanently
-        def apply_theme(new_theme: str):
+        def apply_theme(new_theme: str) -> None:
             self.set_theme(new_theme)
 
         from nexus.screens.theme_picker import ThemePicker
@@ -260,7 +266,8 @@ class ToolSelector(Screen):
         category_list.clear()
 
         # Get unique categories
-        categories = sorted(list(set(t.category for t in TOOLS)))
+        tools = get_tools()
+        categories = sorted(list(set(t.category for t in tools)))
 
         # Add "ALL" category at the start
         all_item = CategoryListItem("ALL")
@@ -285,10 +292,12 @@ class ToolSelector(Screen):
         tool_list = self.query_one("#tool-list", ListView)
         tool_list.clear()
 
+        tools = get_tools()
+
         if category == "ALL":
-            filtered_tools = TOOLS
+            filtered_tools = tools
         else:
-            filtered_tools = [t for t in TOOLS if t.category == category]
+            filtered_tools = [t for t in tools if t.category == category]
 
         if filter_text:
             filtered_tools = [
@@ -304,7 +313,7 @@ class ToolSelector(Screen):
             self.query_one("#tools-empty").add_class("hidden")
         else:
             tool_list.display = False
-            empty_lbl = self.query_one("#tools-empty")
+            empty_lbl = self.query_one("#tools-empty", Label)
             empty_lbl.remove_class("hidden")
             if filter_text:
                 empty_lbl.update(f"No tools matching '{filter_text}'")
@@ -413,7 +422,7 @@ class ToolSelector(Screen):
             if isinstance(item, ToolListItem):
                 self.launch_tool_flow(item.tool_info)
 
-    def launch_tool_flow(self, tool) -> None:
+    def launch_tool_flow(self, tool: Tool) -> None:
         """Handles the flow for launching a tool.
 
         If the tool requires a project, opens the ProjectPicker.
@@ -429,7 +438,7 @@ class ToolSelector(Screen):
         else:
             self.execute_tool_command(tool)
 
-    def execute_tool_command(self, tool) -> None:
+    def execute_tool_command(self, tool: Tool) -> None:
         """Executes the tool command with suspend context.
 
         Args:
@@ -440,6 +449,7 @@ class ToolSelector(Screen):
             from nexus.services.executor import launch_tool
 
             # potentially clear screen or notify starting?
+            log.info("launching_tool", tool=tool.label, command=tool.command)
             success = launch_tool(tool.command)
             if not success:
                 # We can't see this notification until we return, but that's fine

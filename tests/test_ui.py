@@ -6,8 +6,10 @@ from nexus.screens.help import HelpScreen
 from nexus.screens.tool_selector import ToolSelector
 
 
+from textual.widgets import ListView
+
 @pytest.mark.asyncio
-async def test_app_startup_and_help():
+async def test_app_startup_and_help() -> None:
     """Test that the app starts up and help screen can be toggled."""
     app = NexusApp()
     async with app.run_test() as pilot:
@@ -24,7 +26,7 @@ async def test_app_startup_and_help():
 
 
 @pytest.mark.asyncio
-async def test_navigation():
+async def test_navigation() -> None:
     """Test basic navigation in the tool selector."""
     app = NexusApp()
     async with app.run_test() as pilot:
@@ -33,7 +35,7 @@ async def test_navigation():
         assert isinstance(screen, ToolSelector)
 
         # Initial focus should be on category list
-        category_list = screen.query_one("#category-list")
+        category_list = screen.query_one("#category-list", ListView)
         assert category_list.has_focus
 
         # Move down
@@ -44,12 +46,12 @@ async def test_navigation():
 
         # Move right to tools
         await pilot.press("right")
-        tool_list = screen.query_one("#tool-list")
+        tool_list = screen.query_one("#tool-list", ListView)
         assert tool_list.has_focus
 
 
 @pytest.mark.asyncio
-async def test_numeric_launch():
+async def test_numeric_launch() -> None:
     """Test that numeric keys launch the corresponding tool."""
     from unittest.mock import patch
     app = NexusApp()

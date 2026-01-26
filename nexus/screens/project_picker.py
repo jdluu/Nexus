@@ -4,9 +4,11 @@ Allows users to browse potential project directories and choose one as the
 context for a tool execution. Also supports creating new projects.
 """
 
-import asyncio
-from nexus.config import PROJECT_ROOT
-from nexus.models import Tool
+
+
+from nexus.config import get_project_root
+from nexus.models import Project, Tool
+from typing import Any
 from nexus.services.executor import launch_tool
 from nexus.services.scanner import scan_projects
 from nexus.widgets.tool_list_item import ProjectListItem
@@ -16,7 +18,7 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, Label, ListView, LoadingIndicator
 
 
-class ProjectPicker(Screen):
+class ProjectPicker(Screen[None]):
     """Screen for selecting a project directory.
 
     Displays a searchable list of projects found in the configured root directory.
@@ -27,7 +29,7 @@ class ProjectPicker(Screen):
         projects: List of discovered projects.
     """
 
-    def __init__(self, selected_tool: Tool, **kwargs):
+    def __init__(self, selected_tool: Tool, **kwargs: Any):
         """Initializes the ProjectPicker.
 
         Args:
@@ -36,7 +38,7 @@ class ProjectPicker(Screen):
         """
         super().__init__(**kwargs)
         self.selected_tool = selected_tool
-        self.projects = []
+        self.projects: list[Project] = []
 
     BINDINGS = [
         ("down", "cursor_down", "Next Item"),
@@ -72,7 +74,10 @@ class ProjectPicker(Screen):
         self.query_one("#project-list").display = False
         self.query_one("#project-search").focus()
 
-        self.projects = await scan_projects(PROJECT_ROOT)
+        self.query_one("#project-search").focus()
+
+        root = get_project_root()
+        self.projects = await scan_projects(root)
 
         self.populate_list()
         self.query_one("#loading-spinner").display = False
@@ -100,7 +105,8 @@ class ProjectPicker(Screen):
         # Check if list is effectively empty
         if not project_list.children:
             project_list.display = False
-            empty_lbl = self.query_one("#projects-empty")
+            project_list.display = False
+            empty_lbl = self.query_one("#projects-empty", Label)
             empty_lbl.remove_class("hidden")
             if filter_text:
                 empty_lbl.update(f"No projects matching '{filter_text}'")
@@ -135,7 +141,7 @@ class ProjectPicker(Screen):
         """
         self._select_item(event.item)
 
-    def _select_item(self, item) -> None:
+    def _select_item(self, item: Any) -> None:
         """Internal method to handle item selection logic.
 
         Args:
@@ -147,13 +153,14 @@ class ProjectPicker(Screen):
         if item.is_create_new:
             from nexus.screens.create_project import CreateProject
 
-            def on_created(new_project_name: str):
+            def on_created(new_project_name: str) -> None:
                 self.app.notify(f"Created project: {new_project_name}")
                 # Refresh list and try to find the new project
                 import asyncio
 
-                async def refresh():
-                    self.projects = await scan_projects(PROJECT_ROOT)
+                async def refresh() -> None:
+                    root = get_project_root()
+                    self.projects = await scan_projects(root)
                     self.populate_list(filter_text=new_project_name)
 
                 asyncio.create_task(refresh())

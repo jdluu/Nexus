@@ -6,7 +6,7 @@ from nexus import config
 from nexus.services import executor
 
 
-def test_launch_tool_success():
+def test_launch_tool_success() -> None:
     """Test successful tool launch with in-place execution."""
     # Mocking subprocess.run to return a CompletedProcess with returncode 0
     with patch("subprocess.run") as mock_run:
@@ -20,7 +20,7 @@ def test_launch_tool_success():
         assert args == ["echo", "hello"]
 
 
-def test_launch_tool_with_path():
+def test_launch_tool_with_path() -> None:
     """Test tool launch with a project path."""
     from pathlib import Path
 
@@ -39,12 +39,12 @@ def test_launch_tool_with_path():
         assert args == ["nvim", str(project_path)]
 
 
-def test_terminal_detection_ordering():
+def test_terminal_detection_ordering() -> None:
     """Test that detection respects priority list."""
     # Mock shutil.which to only find 'gnome-terminal'
     with patch("shutil.which") as mock_which:
 
-        def side_effect(arg):
+        def side_effect(arg: str) -> str | None:
             if arg == "gnome-terminal":
                 return "/usr/bin/gnome-terminal"
             return None

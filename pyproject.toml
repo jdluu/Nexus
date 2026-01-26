@@ -29,6 +29,12 @@ include = ["nexus/tools.toml"]
 dev = [
     "ruff>=0.14.13",
     "pytest>=8.0.0",
-    "ty>=0.0.12",
+    "mypy>=1.0.0",
+    "structlog>=24.1.0",
     "pytest-asyncio>=1.3.0",
+    "types-toml>=0.10.8",
 ]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true

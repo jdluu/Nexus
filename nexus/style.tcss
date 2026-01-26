@@ -86,6 +86,7 @@ ListItem {
     margin: 0;
     background: transparent;
     border: none;
+    transition: background 200ms; /* Smooth hover effect */
 }
 
 .category-badge {
@@ -433,4 +434,50 @@ ThemePicker {
     height: 3;
     align: right middle;
     margin-top: 1;
+}
+
+/* --- ERROR SCREEN --- */
+#error-dialog {
+    width: 60;
+    height: auto;
+    border: thick #f7768e; /* Red accent */
+    background: #1a1b26;
+    padding: 1 2;
+    align: center middle;
+}
+
+#error-header {
+    height: 3;
+    content-align: center middle;
+    border-bottom: solid #414868;
+    color: #f7768e;
+}
+
+.error-icon {
+    text-style: bold;
+    margin-right: 1;
+}
+
+#error-title {
+    text-style: bold;
+}
+
+#error-body {
+    margin: 1 0;
+    max-height: 20;
+}
+
+#error-message {
+    padding-bottom: 1;
+}
+
+#error-details {
+    color: #565f89;
+    text-style: italic;
+}
+
+#error-footer {
+    align: right middle;
+    margin-top: 1;
+    height: 3;
 }

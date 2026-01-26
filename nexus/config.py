@@ -4,9 +4,11 @@ Handles loading tool definitions from TOML, determining terminal preferences,
 and defining visual assets like colors and icons.
 """
 
+import os
 import shutil
 import tomllib
 from pathlib import Path
+from typing import Any
 
 from nexus.models import Tool
 
@@ -27,11 +29,12 @@ CONFIG_PATHS = [
 
 
 # Global error tracking for configuration loading
-CONFIG_ERRORS = []
+CONFIG_ERRORS: list[str] = []
+_CONFIG_CACHE: dict[str, Any] | None = None
 
 
-def _load_config_data() -> dict:
-    """Loads and merges configuration data from all sources.
+def _load_config_data() -> dict[str, Any]:
+    """Loads and merges configuration data from all sources (Lazy).
 
     Iterates through configuration paths in priority order and merges meaningful
     data (tools, project root) into a single dictionary.
@@ -39,9 +42,13 @@ def _load_config_data() -> dict:
     Returns:
         A dictionary containing the merged configuration data.
     """
-    merged_data = {"tool": [], "project_root": None}
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is not None:
+        return _CONFIG_CACHE
 
-    def merge_from_file(path: Path):
+    merged_data: dict[str, Any] = {"tool": [], "project_root": None}
+
+    def merge_from_file(path: Path) -> None:
         if path.exists():
             try:
                 with open(path, "rb") as f:
@@ -61,31 +68,36 @@ def _load_config_data() -> dict:
     for path in CONFIG_PATHS:
         merge_from_file(path)
 
+    _CONFIG_CACHE = merged_data
     return merged_data
-
-
-_CONFIG_DATA = _load_config_data()
 
 
 def get_project_root() -> Path:
     """Returns the project root directory.
 
-    Checks the loaded configuration for a 'project_root' key. If not found,
-    defaults to '~/Projects'.
+    Priority:
+    1. NEXUS_PROJECT_ROOT environment variable
+    2. 'project_root' in configuration files
+    3. Default: ~/Projects
 
     Returns:
         The defined project root path.
     """
-    if _CONFIG_DATA.get("project_root"):
-        return Path(_CONFIG_DATA["project_root"]).expanduser()
+    # 1. Environment Variable
+    env_root = os.environ.get("NEXUS_PROJECT_ROOT")
+    if env_root:
+        return Path(env_root).expanduser()
 
+    # 2. Configuration File
+    config = _load_config_data()
+    if config.get("project_root"):
+        return Path(config["project_root"]).expanduser()
+
+    # 3. Default
     return Path.home() / "Projects"
 
 
-PROJECT_ROOT = get_project_root()
-
-
-def load_tools() -> list[Tool]:
+def get_tools() -> list[Tool]:
     """Returns the list of configured tools.
 
     Parses the configuration data into Tool models, skipping any invalid entries.
@@ -94,15 +106,14 @@ def load_tools() -> list[Tool]:
         A list of Tool objects.
     """
     tools = []
-    for t in _CONFIG_DATA.get("tool", []):
+    config = _load_config_data()
+    for t in config.get("tool", []):
         try:
             tools.append(Tool(**t))
-        except Exception:
+        except Exception as e:
+            CONFIG_ERRORS.append(f"Invalid tool definition: {e}")
             continue
     return tools
-
-
-TOOLS = load_tools()
 
 
 CATEGORY_COLORS = {
@@ -155,11 +166,3 @@ def get_preferred_terminal() -> str | None:
             return path
 
     return None
-
-
-TERMINAL = get_preferred_terminal()
-
-# Summary:
-# Rewrote docstrings for all functions.
-# Consolidated comments.
-# Removed redundant inline comments.

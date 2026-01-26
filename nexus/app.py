@@ -3,11 +3,13 @@
 Configures the Textual application class, global bindings, and initial screen loading.
 """
 
+from typing import Any
 from textual.app import App
+from textual.notifications import SeverityLevel
 from nexus.screens.tool_selector import ToolSelector
 
 
-class NexusApp(App):
+class NexusApp(App[None]):
     """The main Nexus application class.
 
     Manages the application lifecycle, global bindings, and screen navigation.
@@ -39,10 +41,11 @@ class NexusApp(App):
     def notify(
         self,
         message: str,
+        *,
         title: str = "",
-        severity: str = "information",
-        timeout: float = 1.0,
-        **kwargs,
+        severity: SeverityLevel = "information",
+        timeout: float | None = 1.0,
+        **kwargs: Any,
     ) -> None:
         """Override notify to use a shorter default timeout.
 
@@ -57,9 +60,24 @@ class NexusApp(App):
             message, title=title, severity=severity, timeout=timeout, **kwargs
         )
 
+    def show_error(self, title: str, message: str, details: str = "") -> None:
+        """Displays a modal error screen.
 
-def main():
+        Args:
+            title: The title of the error.
+            message: The user-friendly error message.
+            details: Optional technical details.
+        """
+        from nexus.screens.error import ErrorScreen
+
+        self.push_screen(ErrorScreen(title, message, details))
+
+
+def main() -> None:
     """Entry point for the application."""
+    from nexus.logger import configure_logging
+
+    configure_logging()
     app = NexusApp()
     app.run()
 

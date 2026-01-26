@@ -6,13 +6,14 @@ and projects with specific formatting and visual indicators.
 
 from nexus.config import CATEGORY_COLORS, CATEGORY_ICONS, USE_NERD_FONTS
 from nexus.models import Project, Tool
+from typing import Any
 from textual.widgets import ListItem, Static
 
 
 class ToolItem(Static):
     """A widget representing a tool in the list."""
 
-    def __init__(self, tool_info: Tool, hint: str = "", **kwargs):
+    def __init__(self, tool_info: Tool, hint: str = "", **kwargs: Any):
         """Initializes the ToolItem.
 
         Args:
@@ -52,7 +53,7 @@ class ProjectItem(Static):
         project_name: str,
         is_git: bool = False,
         is_special: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Initializes the ProjectItem.
 
@@ -92,7 +93,7 @@ class ToolListItem(ListItem):
         tool_info: The Tool model associated with this item.
     """
 
-    def __init__(self, tool_info: Tool, hint: str = "", **kwargs):
+    def __init__(self, tool_info: Tool, hint: str = "", **kwargs: Any):
         """Initializes the ToolListItem.
 
         Args:
@@ -116,7 +117,7 @@ class ProjectListItem(ListItem):
         self,
         project_data: Project | None = None,
         is_create_new: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Initializes the ProjectListItem.
 
@@ -148,7 +149,7 @@ class CategoryListItem(ListItem):
         category_id: The category identifier string.
     """
 
-    def __init__(self, category: str, **kwargs):
+    def __init__(self, category: str, **kwargs: Any):
         """Initializes the CategoryListItem.
 
         Args:

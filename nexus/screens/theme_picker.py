@@ -3,6 +3,7 @@
 Provides a modal list of available themes with live preview capability.
 """
 
+from typing import Any, Callable
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container
@@ -10,7 +11,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Label, ListItem, ListView
 
 
-class ThemePicker(ModalScreen):
+class ThemePicker(ModalScreen[None]):
     """A modal screen for selecting a theme with live preview.
 
     Attributes:
@@ -22,7 +23,7 @@ class ThemePicker(ModalScreen):
     CSS_PATH = "../style.tcss"
 
     def __init__(
-        self, themes: list[str], current_theme: str, on_preview: callable, **kwargs
+        self, themes: list[str], current_theme: str, on_preview: Callable[[str], None], **kwargs: Any
     ):
         """Initializes the ThemePicker.
 

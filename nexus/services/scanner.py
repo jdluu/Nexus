@@ -31,7 +31,7 @@ async def scan_projects(root_path: Path) -> list[Project]:
     # Run directory listing in a thread to avoid blocking the event loop
     loop = asyncio.get_running_loop()
 
-    def get_dirs():
+    def get_dirs() -> list[Path]:
         try:
             return [d for d in root_path.iterdir() if d.is_dir()]
         except PermissionError:

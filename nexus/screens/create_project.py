@@ -4,8 +4,9 @@ Collects user input for a new project directory name and creates the directory.
 """
 
 import os
+from typing import Any, Callable
 
-from nexus.config import PROJECT_ROOT
+from nexus.config import get_project_root
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
@@ -13,7 +14,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label
 
 
-class CreateProject(ModalScreen):
+class CreateProject(ModalScreen[None]):
     """A modal screen for creating a new project.
 
     Attributes:
@@ -22,7 +23,7 @@ class CreateProject(ModalScreen):
 
     CSS_PATH = "../style.tcss"
 
-    def __init__(self, on_created: callable, **kwargs):
+    def __init__(self, on_created: Callable[[str], None], **kwargs: Any):
         """Initializes the CreateProject screen.
 
         Args:
@@ -76,12 +77,13 @@ class CreateProject(ModalScreen):
 
     def create_project(self) -> None:
         """Validates input and attempts to create the project directory."""
-        name = self.query_one("#project-name-input").value.strip()
+        name_input = self.query_one("#project-name-input", Input)
+        name = name_input.value.strip()
         if not name:
             self.show_error("Project name cannot be empty.")
             return
 
-        project_path = PROJECT_ROOT / name
+        project_path = get_project_root() / name
 
         if project_path.exists():
             self.show_error("Project already exists.")
@@ -90,8 +92,7 @@ class CreateProject(ModalScreen):
         try:
             os.makedirs(project_path)
             self.dismiss()
-            if self.on_created_callback:
-                self.on_created_callback(name)
+            self.on_created_callback(name)
         except Exception as e:
             self.show_error(f"Error: {e}")
 
