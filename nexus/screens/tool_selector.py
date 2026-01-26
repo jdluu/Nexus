@@ -9,7 +9,7 @@ from textual.containers import Horizontal, Vertical
 from textual.events import Key
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import Label, ListView
+from textual.widgets import Label, ListView, Input
 
 from nexus.config import get_tools
 from nexus.logger import get_logger
@@ -39,14 +39,13 @@ class ToolSelector(Screen[None]):
 
     BINDINGS = [
         ("ctrl+t", "show_theme_picker", "Theme"),
-        ("escape", "clear_search", "Clear Search"),
+        ("ctrl+f", "toggle_favorite", "Favorite"),
+        ("escape", "focus_search", "Search"),
         ("down", "cursor_down", "Next Item"),
         ("up", "cursor_up", "Previous Item"),
         ("right", "cursor_right", "Enter List"),
         ("left", "cursor_left", "Back to Categories"),
         ("enter", "launch_current", "Launch Tool"),
-        ("backspace", "delete_char", "Delete Character"),
-        ("f", "toggle_favorite", "Favorite"),
         ("?", "show_help", "Help"),
         ("f1", "show_help", "Help"),
     ]
@@ -68,7 +67,7 @@ class ToolSelector(Screen[None]):
                 "**********************************\n Nexus Interface \n**********************************",
                 id="header-left",
             )
-            yield Label("", id="header-right")
+            yield Input(placeholder="Search tools...", id="tool-search")
 
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
@@ -99,7 +98,7 @@ class ToolSelector(Screen[None]):
                 yield Label("Pane", classes="key-desc")
                 yield Label("Enter", classes="key-badge")
                 yield Label("Launch", classes="key-desc")
-                yield Label("F", classes="key-badge")
+                yield Label("^F", classes="key-badge")
                 yield Label("Fav", classes="key-desc")
 
             # SEARCH
@@ -108,14 +107,14 @@ class ToolSelector(Screen[None]):
                 yield Label("Type", classes="key-badge")
                 yield Label("Filter", classes="key-desc")
                 yield Label("Esc", classes="key-badge")
-                yield Label("Clear", classes="key-desc")
+                yield Label("Reset", classes="key-desc")
 
             # SYSTEM
             with Horizontal(classes="footer-col"):
                 yield Label("SYSTEM", classes="footer-label")
                 yield Label("^T", classes="key-badge")
                 yield Label("Theme", classes="key-desc")
-                yield Label("^C", classes="key-badge")
+                yield Label("^Q", classes="key-badge")
                 yield Label("Exit", classes="key-desc")
 
     # Theme Management
@@ -187,41 +186,27 @@ class ToolSelector(Screen[None]):
         for error in CONFIG_ERRORS:
             self.app.notify(error, title="Config Error", severity="error", timeout=5.0)
 
-    def watch_search_query(self, old_value: str, new_value: str) -> None:
-        """Reacts to changes in the search query.
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Called when the search input changes.
 
         Args:
-            old_value: The previous search query.
-            new_value: The new search query.
+            event: The input changed event.
         """
-        try:
-            feedback = self.query_one("#header-right", Label)
-        except Exception:
-            return
-
-        if new_value:
-            feedback.update(f"SEARCH: {new_value}_")
-
-            # Switch to ALL category automatically if not already
-            self.select_all_category()
-
-            # Populate tools with filter
-            self.populate_tools("ALL", filter_text=new_value)
-        else:
-            feedback.update("")
-            # Re-populate without filter (keeps current category theoretically, but we might want to reset?)
-            # For now, let's just re-populate based on currently selected category
+        if event.input.id == "tool-search":
+            self.search_query = event.value
+            # Switch to ALL category automatically if searching
+            if event.value:
+                self.select_all_category()
             self.refresh_tools()
 
-    def select_all_category(self) -> None:
-        """Selects the 'ALL' category in the list."""
-        category_list = self.query_one("#category-list", ListView)
-        # Assuming ALL is always index 0
-        if category_list.index != 0:
-            category_list.index = 0
+    def action_focus_search(self) -> None:
+        """Focuses the search input and clears it."""
+        search = self.query_one("#tool-search", Input)
+        search.value = ""
+        search.focus()
 
     def on_key(self, event: Key) -> None:
-        """Global key handler for type-to-search and numeric quick launch.
+        """Global key handler for numeric quick launch.
 
         Args:
             event: The key event.
@@ -236,21 +221,6 @@ class ToolSelector(Screen[None]):
                     self.launch_tool_flow(item.tool_info)
                     event.stop()
                     return
-
-        if event.key.isprintable() and len(event.key) == 1:
-            # Append char to query
-            self.search_query += event.key
-            event.stop()  # execution stops here, preventing default handling if any
-
-    def action_delete_char(self) -> None:
-        """Deletes the last character from search query."""
-        if self.search_query:
-            self.search_query = self.search_query[:-1]
-
-    def action_clear_search(self) -> None:
-        """Clears the search input."""
-        if self.search_query:
-            self.search_query = ""
 
     def refresh_tools(self) -> None:
         """Refreshes tool list based on current selection and search text."""

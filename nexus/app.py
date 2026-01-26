@@ -18,9 +18,9 @@ class NexusApp(App[None]):
 
     CSS_PATH = "style.tcss"
     BINDINGS = [
-        ("q", "quit", "Quit"),
+        ("ctrl+q", "quit", "Quit"),
         ("ctrl+c", "quit", "Quit"),
-        ("escape", "back", "Back"),
+        ("ctrl+b", "back", "Back"),
     ]
 
     def on_mount(self) -> None:

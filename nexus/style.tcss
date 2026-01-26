@@ -17,14 +17,20 @@ Screen {
 }
 
 #header-left {
-    width: 1fr;
+    width: auto;
     content-align: left middle;
 }
 
-#header-right {
-    width: 1fr;
-    content-align: right middle;
-    text-style: bold;
+#tool-search {
+    width: 60%;
+    margin-left: 2;
+    background: transparent;
+    border: none;
+    color: #c0caf5;
+}
+
+#tool-search:focus {
+    border: solid #7aa2f7;
 }
 
 #tool-description {

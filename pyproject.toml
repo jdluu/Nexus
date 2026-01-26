@@ -1,6 +1,6 @@
 [project]
 name = "nexus-tui"
-version = "0.1.1"
+version = "0.1.2"
 description = "A TUI orchestrator to manage and launch your command-line tools without memorizing commands"
 readme = "README.md"
 requires-python = ">=3.12"

@@ -105,10 +105,11 @@ nexus
 
 *   **Arrow Keys**: Navigate through lists.
 *   **Enter**: Confirm selection or launch tool.
-*   **F**: Toggle the favorite status of a tool.
-*   **Type**: Instantly filter lists by text.
-*   **Esc**: Return to the previous screen.
-*   **Q**: Exit the application.
+*   **Ctrl+F**: Toggle the favorite status of a tool.
+*   **TypeAnywhere**: Instantly filter lists by typing in the search bar.
+*   **Esc**: Reset the search filter.
+*   **Ctrl+B**: Go back (on picker screens).
+*   **Ctrl+Q**: Exit the application.
 
 ## Development
 
