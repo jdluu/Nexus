@@ -218,11 +218,22 @@ class ToolSelector(Screen[None]):
         search.focus()
 
     def on_key(self, event: Key) -> None:
-        """Global key handler for numeric quick launch.
+        """Global key handler for numeric quick launch and navigation.
 
         Args:
             event: The key event.
         """
+        # Explicitly handle Up/Down if search is focused (Input can eat them)
+        if self.query_one("#tool-search").has_focus:
+            if event.key == "down":
+                self.action_cursor_down()
+                event.stop()
+                return
+            elif event.key == "up":
+                self.action_cursor_up()
+                event.stop()
+                return
+
         # Numeric keys 1-9 for quick launch
         if event.key in "123456789":
             idx = int(event.key) - 1
