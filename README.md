@@ -1,6 +1,6 @@
 # Nexus
 
-Nexus is a TUI orchestrator designed to manage and launch your command-line tools from a single, intuitive interface. It eliminates the need to memorize complex commands or flags by providing a centralized dashboard for all your development utilities and projects.
+Nexus is a TUI orchestrator designed to help you organize and launch your collection of terminal utilities. Instead of memorizing every tool's unique command, Nexus provides a centralized dashboard to discover and run your installed TUIs from a single, intuitive interface.
 
 ## Prerequisites
 

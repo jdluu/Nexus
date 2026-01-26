@@ -1,6 +1,6 @@
 # Nexus Wiki
 
-Welcome to the Nexus documentation. Nexus is a TUI orchestrator designed to centralize your terminal utilities and projects, removing the need to memorize every command and flag.
+Welcome to the Nexus documentation. Nexus is a TUI orchestrator designed to centralize your terminal utilities, helping you remember and launch your installed tools without having to memorize every individual command.
 
 ## Installation
 
