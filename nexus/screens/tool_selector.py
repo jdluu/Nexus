@@ -13,7 +13,6 @@ from textual.widgets import Label, ListView
 
 from nexus.config import get_tools
 from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
-from nexus.logger import get_logger
 from nexus.models import Tool
 
 
