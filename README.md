@@ -14,14 +14,14 @@ Install Nexus globally using the `uv` tool manager:
 
 ```bash
 # Always latest stable
-uv tool install nexus
+uv tool install nexus-tui
 ```
 
 ### Upgrade
 
 To update to the latest version:
 ```bash
-uv tool upgrade nexus
+uv tool upgrade nexus-tui
 ```
 
 ### Local Development

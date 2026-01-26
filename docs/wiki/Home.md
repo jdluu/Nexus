@@ -5,18 +5,15 @@ Welcome to the Nexus documentation. Nexus is a cross-platform terminal user inte
 ## Installation
 
 ```bash
-# Stable release (recommended)
-uv tool install git+https://github.com/jdluu/Nexus@v1.0.0
-
-# Latest development (unstable)
-uv tool install git+https://github.com/jdluu/Nexus@main
+# Always latest stable
+uv tool install nexus-tui
 ```
 
 ## Upgrade
 
 To update an existing installation:
 ```bash
-uv tool upgrade nexus
+uv tool upgrade nexus-tui
 ```
 
 ## Core Features
