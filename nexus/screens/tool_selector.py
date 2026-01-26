@@ -9,23 +9,12 @@ from textual.containers import Horizontal, Vertical
 from textual.events import Key
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import Label, ListView, Input
+from textual.widgets import Label, ListView
 
 from nexus.config import get_tools
+from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
 from nexus.logger import get_logger
 from nexus.models import Tool
-from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
-
-
-class SearchInput(Input):
-    """Custom input that doesn't consume navigation keys, letting them bubble."""
-    
-    async def _on_key(self, event: Key) -> None:
-        if event.key in ("up", "down", "enter", "escape"):
-            # Don't stop propagation, let screen on_key handle them
-            return
-        # Let default Input behavior handle characters, backspace, etc.
-        await super()._on_key(event)
 
 
 class ToolSelector(Screen[None]):
@@ -47,12 +36,13 @@ class ToolSelector(Screen[None]):
     BINDINGS = [
         ("ctrl+t", "show_theme_picker", "Theme"),
         ("ctrl+f", "toggle_favorite", "Favorite"),
-        ("escape", "focus_search", "Search"),
+        ("escape", "clear_search", "Clear Search"),
         ("down", "cursor_down", "Next Item"),
         ("up", "cursor_up", "Previous Item"),
         ("right", "cursor_right", "Enter List"),
         ("left", "cursor_left", "Back to Categories"),
         ("enter", "launch_current", "Launch Tool"),
+        ("backspace", "delete_char", "Delete Character"),
         ("?", "show_help", "Help"),
         ("f1", "show_help", "Help"),
     ]
@@ -74,7 +64,7 @@ class ToolSelector(Screen[None]):
                 "**********************************\n Nexus Interface \n**********************************",
                 id="header-left",
             )
-            yield SearchInput(placeholder="Search tools...", id="tool-search")
+            yield Label("Search tools...", id="tool-search")
 
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
@@ -114,7 +104,7 @@ class ToolSelector(Screen[None]):
                 yield Label("Type", classes="key-badge")
                 yield Label("Filter", classes="key-desc")
                 yield Label("Esc", classes="key-badge")
-                yield Label("Reset", classes="key-desc")
+                yield Label("Clear", classes="key-desc")
 
             # SYSTEM
             with Horizontal(classes="footer-col"):
@@ -185,8 +175,8 @@ class ToolSelector(Screen[None]):
         """
         self.add_class(self.THEMES[self.current_theme_index])
         self.populate_categories()
-        # Default focus to search for "type anywhere" feel
-        self.query_one("#tool-search").focus()
+        # Default focus to categories
+        self.query_one("#category-list").focus()
 
         # Report any config errors from loading phase
         from nexus.config import CONFIG_ERRORS
@@ -203,69 +193,60 @@ class ToolSelector(Screen[None]):
                     category_list.index = idx
                 break
 
-    def on_input_changed(self, event: Input.Changed) -> None:
-        """Called when the search input changes.
+    def watch_search_query(self, old_value: str, new_value: str) -> None:
+        """Reacts to changes in the search query.
 
         Args:
-            event: The input changed event.
+            old_value: The previous search query.
+            new_value: The new search query.
         """
-        if event.input.id == "tool-search":
-            self.search_query = event.value
-            # Switch to ALL category automatically if searching
-            if event.value:
-                self.select_all_category()
+        try:
+            feedback = self.query_one("#tool-search", Label)
+        except Exception:
+            return
+
+        if new_value:
+            feedback.update(f"SEARCH: {new_value}_")
+            # Switch to ALL category automatically if not already
+            self.select_all_category()
+            # Populate tools with filter
+            self.refresh_tools()
+        else:
+            feedback.update("Search tools...")
+            # Re-populate without filter
             self.refresh_tools()
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Called when Enter is pressed in the search input."""
-        if event.input.id == "tool-search":
-            self.action_launch_current()
+    def action_delete_char(self) -> None:
+        """Deletes the last character from search query."""
+        if self.search_query:
+            self.search_query = self.search_query[:-1]
 
-    def action_focus_search(self) -> None:
-        """Focuses the search input and clears it."""
-        search = self.query_one("#tool-search", Input)
-        search.value = ""
-        search.focus()
+    def action_clear_search(self) -> None:
+        """Clears the search input."""
+        if self.search_query:
+            self.search_query = ""
 
     def on_key(self, event: Key) -> None:
-        """Global key handler for numeric quick launch and navigation.
+        """Global key handler for type-to-search and numeric quick launch.
 
         Args:
             event: The key event.
         """
-        # Global Navigation Interception
-        if event.key == "down":
-            self.action_cursor_down()
-            event.stop()
-            return
-        elif event.key == "up":
-            self.action_cursor_up()
-            event.stop()
-            return
-        elif event.key == "enter":
-            self.action_launch_current()
-            event.stop()
-            return
-        elif event.key == "escape":
-            self.action_focus_search()
-            event.stop()
-            return
-
         # Numeric keys 1-9 for quick launch
         if event.key in "123456789":
-            # Only quick launch if not typing in search (or maybe always?)
-            # Let's say only if search is NOT focused, or if it's empty?
-            # User might want to type numbers in search.
-            search = self.query_one("#tool-search", SearchInput)
-            if not search.has_focus or not search.value:
-                idx = int(event.key) - 1
-                tool_list = self.query_one("#tool-list", ListView)
-                if idx < len(tool_list.children):
-                    item = tool_list.children[idx]
-                    if isinstance(item, ToolListItem):
-                        self.launch_tool_flow(item.tool_info)
-                        event.stop()
-                        return
+            idx = int(event.key) - 1
+            tool_list = self.query_one("#tool-list", ListView)
+            if idx < len(tool_list.children):
+                item = tool_list.children[idx]
+                if isinstance(item, ToolListItem):
+                    self.launch_tool_flow(item.tool_info)
+                    event.stop()
+                    return
+
+        if event.key.isprintable() and len(event.key) == 1:
+            # Append char to query
+            self.search_query += event.key
+            event.stop()
 
     def refresh_tools(self) -> None:
         """Refreshes tool list based on current selection and search text."""
@@ -409,18 +390,7 @@ class ToolSelector(Screen[None]):
 
     def action_cursor_down(self) -> None:
         """Moves selection down in the active list."""
-        focused = self.app.focused
-        
-        # If search or tool-list is focused, move tool selection
-        if focused and (focused.id == "tool-list" or focused.id == "tool-search"):
-            tool_list = self.query_one("#tool-list", ListView)
-            if tool_list.index is None:
-                tool_list.index = 0
-            else:
-                tool_list.index = min(len(tool_list.children) - 1, tool_list.index + 1)
-        
-        # If category-list is focused, move category selection
-        elif focused and focused.id == "category-list":
+        if self.query_one("#category-list").has_focus:
             category_list = self.query_one("#category-list", ListView)
             if category_list.index is None:
                 category_list.index = 0
@@ -429,17 +399,22 @@ class ToolSelector(Screen[None]):
                     len(category_list.children) - 1, category_list.index + 1
                 )
 
+        elif self.query_one("#tool-list").has_focus:
+            tool_list = self.query_one("#tool-list", ListView)
+            if tool_list.index is None:
+                tool_list.index = 0
+            else:
+                tool_list.index = min(len(tool_list.children) - 1, tool_list.index + 1)
+
     def action_cursor_up(self) -> None:
         """Moves selection up in the active list."""
-        focused = self.app.focused
-        
-        if focused and (focused.id == "tool-list" or focused.id == "tool-search"):
-            lst = self.query_one("#tool-list", ListView)
+        if self.query_one("#category-list").has_focus:
+            lst = self.query_one("#category-list", ListView)
             if lst.index is not None:
                 lst.index = max(0, lst.index - 1)
-        
-        elif focused and focused.id == "category-list":
-            lst = self.query_one("#category-list", ListView)
+
+        elif self.query_one("#tool-list").has_focus:
+            lst = self.query_one("#tool-list", ListView)
             if lst.index is not None:
                 lst.index = max(0, lst.index - 1)
 

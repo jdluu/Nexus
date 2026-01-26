@@ -24,13 +24,11 @@ Screen {
 #tool-search {
     width: 60%;
     margin-left: 2;
-    background: transparent;
-    border: none;
-    color: #c0caf5;
-}
-
-#tool-search:focus {
-    border: solid #7aa2f7;
+    padding: 0 1;
+    background: $surface;
+    color: $text;
+    border: tall $border;
+    height: 3;
 }
 
 #tool-description {
