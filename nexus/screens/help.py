@@ -60,6 +60,3 @@ class HelpScreen(ModalScreen[None]):
         if event.button.id == "btn-close":
             self.dismiss()
 
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Added module docstring.

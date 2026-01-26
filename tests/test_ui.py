@@ -39,10 +39,11 @@ async def test_navigation() -> None:
         assert category_list.has_focus
 
         # Move down
+        start_index = category_list.index or 0
         await pilot.press("down")
         # Assert index changed (if there are items)
         if len(category_list.children) > 1:
-            assert category_list.index == 1
+            assert category_list.index == start_index + 1
 
         # Move right to tools
         await pilot.press("right")

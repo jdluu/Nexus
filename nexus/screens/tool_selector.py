@@ -46,6 +46,7 @@ class ToolSelector(Screen[None]):
         ("left", "cursor_left", "Back to Categories"),
         ("enter", "launch_current", "Launch Tool"),
         ("backspace", "delete_char", "Delete Character"),
+        ("f", "toggle_favorite", "Favorite"),
         ("?", "show_help", "Help"),
         ("f1", "show_help", "Help"),
     ]
@@ -59,8 +60,8 @@ class ToolSelector(Screen[None]):
     def compose(self) -> ComposeResult:
         """Composes the screen layout.
 
-        Returns:
-            A ComposeResult containing the widget tree.
+        Yields:
+            The widget tree for the screen.
         """
         with Horizontal(id="header"):
             yield Label(
@@ -98,6 +99,8 @@ class ToolSelector(Screen[None]):
                 yield Label("Pane", classes="key-desc")
                 yield Label("Enter", classes="key-badge")
                 yield Label("Launch", classes="key-desc")
+                yield Label("F", classes="key-badge")
+                yield Label("Fav", classes="key-desc")
 
             # SEARCH
             with Horizontal(classes="footer-col"):
@@ -269,7 +272,11 @@ class ToolSelector(Screen[None]):
         tools = get_tools()
         categories = sorted(list(set(t.category for t in tools)))
 
-        # Add "ALL" category at the start
+        # Add FAVORITES and ALL category at the start
+        fav_item = CategoryListItem("FAVORITES")
+        fav_item.add_class("category-FAVORITES") # Optional styling hook
+        category_list.append(fav_item)
+        
         all_item = CategoryListItem("ALL")
         category_list.append(all_item)
 
@@ -277,10 +284,21 @@ class ToolSelector(Screen[None]):
             item = CategoryListItem(category)
             category_list.append(item)
 
-        # Select first category if available
-        if categories:
-            category_list.index = 0
-            self.populate_tools(categories[0])  # Initial population
+        # Select "ALL" category by default (index 1, as FAVORITES is 0)
+        # Or find index of "ALL"
+        if category_list.children:
+            all_idx = 1 if len(category_list.children) > 1 else 0
+            category_list.index = all_idx
+            # Trigger population via index change?
+            # Textual might not trigger highlighted event on programmatic set if not focused/mounted fully?
+            # Safe to call populate_tools explicitly.
+            cat_id = "ALL"
+            if 0 <= all_idx < len(category_list.children):
+                 child = category_list.children[all_idx]
+                 if isinstance(child, CategoryListItem):
+                     cat_id = child.category_id
+            
+            self.populate_tools(cat_id)
 
     def populate_tools(self, category: str, filter_text: str = "") -> None:
         """Populates the tool list based on category and filter text.
@@ -289,6 +307,8 @@ class ToolSelector(Screen[None]):
             category: The category ID to filter by (or "ALL").
             filter_text: Optional text to filter tool label/description.
         """
+        from nexus.app import NexusApp
+
         tool_list = self.query_one("#tool-list", ListView)
         tool_list.clear()
 
@@ -296,6 +316,12 @@ class ToolSelector(Screen[None]):
 
         if category == "ALL":
             filtered_tools = tools
+        elif category == "FAVORITES":
+            if isinstance(self.app, NexusApp):
+                favs = self.app.container.state_manager.get_favorites()
+                filtered_tools = [t for t in tools if t.command in favs]
+            else:
+                filtered_tools = []
         else:
             filtered_tools = [t for t in tools if t.category == category]
 
@@ -322,7 +348,11 @@ class ToolSelector(Screen[None]):
 
         for i, tool in enumerate(filtered_tools):
             hint = str(i + 1) if i < 9 else ""
-            item = ToolListItem(tool, hint=hint)
+            is_fav = False
+            if isinstance(self.app, NexusApp):
+                is_fav = self.app.container.state_manager.is_favorite(tool.command)
+                
+            item = ToolListItem(tool, hint=hint, is_favorite=is_fav)
             tool_list.append(item)
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
@@ -413,6 +443,20 @@ class ToolSelector(Screen[None]):
         if self.query_one("#tool-list").has_focus:
             self.query_one("#category-list").focus()
 
+    def action_toggle_favorite(self) -> None:
+        """Toggles the favorite status of the selected tool."""
+        if self.query_one("#tool-list").has_focus:
+            tool_list = self.query_one("#tool-list", ListView)
+            if tool_list.index is not None and tool_list.index < len(tool_list.children):
+                item = tool_list.children[tool_list.index]
+                if isinstance(item, ToolListItem):
+                    from nexus.app import NexusApp
+                    if isinstance(self.app, NexusApp):
+                        self.app.container.state_manager.toggle_favorite(item.tool_info.command)
+                        # Refresh to show star or remove from Favorites list if active
+                        self.refresh_tools()
+                        self.notify("Toggled Favorite")
+
     def action_launch_current(self) -> None:
         """Launches the currently selected tool."""
         tool_list = self.query_one("#tool-list", ListView)
@@ -446,18 +490,16 @@ class ToolSelector(Screen[None]):
         """
         # Launch directly with suspend
         with self.app.suspend():
-            from nexus.services.executor import launch_tool
+            from nexus.app import NexusApp
 
-            # potentially clear screen or notify starting?
-            log.info("launching_tool", tool=tool.label, command=tool.command)
-            success = launch_tool(tool.command)
+            if isinstance(self.app, NexusApp):
+                success = self.app.container.executor.launch_tool(tool.command)
+            else:
+                # Fallback or strict error
+                success = False
+
             if not success:
                 # We can't see this notification until we return, but that's fine
                 self.app.notify(f"Failed to launch {tool.label}", severity="error")
 
         self.app.refresh()
-
-# Summary:
-# Rewrote docstrings to Google Style.
-# Added docstrings for all methods and classes.
-# Improved comment clarity in complex logic.

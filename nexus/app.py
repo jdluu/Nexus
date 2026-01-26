@@ -6,6 +6,7 @@ Configures the Textual application class, global bindings, and initial screen lo
 from typing import Any
 from textual.app import App
 from textual.notifications import SeverityLevel
+from nexus.container import get_container
 from nexus.screens.tool_selector import ToolSelector
 
 
@@ -27,7 +28,25 @@ class NexusApp(App[None]):
 
         Push the ToolSelector screen to the stack on startup.
         """
+        # Initialize services
+        self.container = get_container()
+        
+        # Apply keybindings from config
+        self._apply_bindings()
+        
         self.push_screen(ToolSelector())
+
+    def _apply_bindings(self) -> None:
+        """Applies configurable keybindings."""
+        from nexus.config import get_keybindings
+        bindings = get_keybindings()
+        
+        if "quit" in bindings:
+            self.bind(keys=bindings["quit"], action="quit", description="Quit")
+        if "force_quit" in bindings:
+            self.bind(keys=bindings["force_quit"], action="quit", description="Quit")
+        if "back" in bindings:
+            self.bind(keys=bindings["back"], action="back", description="Back")
 
     async def action_back(self) -> None:
         """Navigates back to the previous screen.
@@ -85,7 +104,3 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-# Summary:
-# Rewrote docstrings to Google Style.
-# Added docstrings for arguments in `notify`.
-# Removed redundant comments.

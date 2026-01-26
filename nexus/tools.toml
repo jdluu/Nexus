@@ -1,9 +1,10 @@
 # Default Configuration
 # You can override this by creating a `tools.local.toml` in this directory
-# or `~/.config/nexus/tools.toml`.
+# or `~/.config/nexus/tools.toml` (Linux), `~/Library/Application Support/Nexus/tools.toml` (Mac),
+# or `%LOCALAPPDATA%\Nexus\tools.toml` (Windows).
 
 # To set your project root (where Nexus looks for projects):
-# project_root = "~/Projects"
+# project_root = "~/Projects" # Tilde is expanded to User Home
 
 [[tool]]
 label = "Neovim"

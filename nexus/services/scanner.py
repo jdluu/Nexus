@@ -44,7 +44,3 @@ async def scan_projects(root_path: Path) -> list[Project]:
         projects.append(Project(name=d.name, path=d, is_git=is_git))
 
     return projects
-
-# Summary:
-# Rewrote docstrings to Google Style.
-# Preserved necessary logic comments.

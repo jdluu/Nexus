@@ -10,12 +10,13 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+import platformdirs
 from nexus.models import Tool
 
 # Configuration Paths in priority order (lowest to highest)
 CWD_NEXUS_CONFIG = Path.cwd() / "nexus" / "tools.local.toml"
 CWD_CONFIG = Path.cwd() / "tools.local.toml"
-USER_CONFIG_PATH = Path.home() / ".config" / "nexus" / "tools.toml"
+USER_CONFIG_PATH = Path(platformdirs.user_config_dir("nexus", roaming=True)) / "tools.toml"
 LOCAL_CONFIG_PATH = Path(__file__).parent / "tools.local.toml"
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "tools.toml"
 
@@ -90,8 +91,11 @@ def get_project_root() -> Path:
 
     # 2. Configuration File
     config = _load_config_data()
-    if config.get("project_root"):
-        return Path(config["project_root"]).expanduser()
+    if config_root := config.get("project_root"):
+        path_str = str(config_root)
+        if path_str.startswith("~"):
+            return Path(path_str).expanduser()
+        return Path(path_str)
 
     # 3. Default
     return Path.home() / "Projects"
@@ -114,6 +118,31 @@ def get_tools() -> list[Tool]:
             CONFIG_ERRORS.append(f"Invalid tool definition: {e}")
             continue
     return tools
+
+
+def get_keybindings() -> dict[str, str]:
+    """Returns the keybinding configuration.
+
+    Merges default bindings with user overrides from configuration files.
+
+    Returns:
+        A dictionary mapping action names to key sequences.
+    """
+    defaults = {
+        "quit": "q",
+        "force_quit": "ctrl+c",
+        "back": "escape",
+        "theme": "ctrl+t",
+        "help": "?",
+        "fuzzy_search": "ctrl+f",
+        "toggle_favorite": "f",
+    }
+
+    config = _load_config_data()
+    user_bindings = config.get("keybindings", {})
+    
+    # Merge defaults with user bindings
+    return {**defaults, **user_bindings}
 
 
 CATEGORY_COLORS = {

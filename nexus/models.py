@@ -41,6 +41,3 @@ class Project(BaseModel):
     path: Path
     is_git: bool
 
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Preserved Pydantic model structure.

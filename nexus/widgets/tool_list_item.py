@@ -13,17 +13,25 @@ from textual.widgets import ListItem, Static
 class ToolItem(Static):
     """A widget representing a tool in the list."""
 
-    def __init__(self, tool_info: Tool, hint: str = "", **kwargs: Any):
+    def __init__(
+        self,
+        tool_info: Tool,
+        hint: str = "",
+        is_favorite: bool = False,
+        **kwargs: Any,
+    ):
         """Initializes the ToolItem.
 
         Args:
             tool_info: The Tool model containing tool details.
             hint: Optional numeric hint (e.g. '1').
+            is_favorite: Whether the tool is marked as a favorite.
             **kwargs: Additional arguments passed to the Static widget.
         """
         super().__init__(**kwargs)
         self.tool_info = tool_info
         self.hint = hint
+        self.is_favorite = is_favorite
         self.can_focus = True
 
     def render(self) -> str:
@@ -33,8 +41,9 @@ class ToolItem(Static):
             A string representation of the tool label prefixed with '> '.
         """
         hint_str = f"[bold magenta]{self.hint}[/] " if self.hint else ""
+        fav_str = "[bold yellow]★[/] " if self.is_favorite else ""
         label = self.tool_info.label
-        return f"{hint_str}> {label} | [dim]{self.tool_info.description}[/]"
+        return f"{hint_str}{fav_str}> {label} | [dim]{self.tool_info.description}[/]"
 
     def on_mount(self) -> None:
         """Called when the widget is mounted.
@@ -93,16 +102,25 @@ class ToolListItem(ListItem):
         tool_info: The Tool model associated with this item.
     """
 
-    def __init__(self, tool_info: Tool, hint: str = "", **kwargs: Any):
+    def __init__(
+        self,
+        tool_info: Tool,
+        hint: str = "",
+        is_favorite: bool = False,
+        **kwargs: Any,
+    ):
         """Initializes the ToolListItem.
 
         Args:
             tool_info: The Tool model.
             hint: Optional numeric hint.
+            is_favorite: Whether the tool is a favorite.
             **kwargs: Additional arguments passed to the ListItem.
         """
         self.tool_info = tool_info
-        super().__init__(ToolItem(tool_info, hint=hint), **kwargs)
+        super().__init__(
+            ToolItem(tool_info, hint=hint, is_favorite=is_favorite), **kwargs
+        )
 
 
 class ProjectListItem(ListItem):
@@ -174,7 +192,3 @@ class CategoryListItem(ListItem):
 
         color = CATEGORY_COLORS.get(self.category_id, "white")
         return f"[{color}]◼[/] {icon}{self.category_id}"
-
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Added return type documentation.

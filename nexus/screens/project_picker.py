@@ -9,13 +9,12 @@ context for a tool execution. Also supports creating new projects.
 from nexus.config import get_project_root
 from nexus.models import Project, Tool
 from typing import Any
-from nexus.services.executor import launch_tool
-from nexus.services.scanner import scan_projects
 from nexus.widgets.tool_list_item import ProjectListItem
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Input, Label, ListView, LoadingIndicator
+from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, LoadingIndicator
+from thefuzz import process
 
 
 class ProjectPicker(Screen[None]):
@@ -49,8 +48,8 @@ class ProjectPicker(Screen[None]):
     def compose(self) -> ComposeResult:
         """Composes the screen layout.
 
-        Returns:
-            A ComposeResult containing the widget tree.
+        Yields:
+            The widget tree for the screen.
         """
         yield Header()
         yield Container(
@@ -74,10 +73,11 @@ class ProjectPicker(Screen[None]):
         self.query_one("#project-list").display = False
         self.query_one("#project-search").focus()
 
-        self.query_one("#project-search").focus()
-
         root = get_project_root()
-        self.projects = await scan_projects(root)
+        from nexus.app import NexusApp
+
+        if isinstance(self.app, NexusApp):
+            self.projects = await self.app.container.scanner.scan_projects(root)
 
         self.populate_list()
         self.query_one("#loading-spinner").display = False
@@ -97,14 +97,51 @@ class ProjectPicker(Screen[None]):
             new_item = ProjectListItem(is_create_new=True)
             project_list.append(new_item)
 
-        for project in self.projects:
-            if filter_text.lower() in project.name.lower():
-                item = ProjectListItem(project_data=project)
-                project_list.append(item)
+            # --- Recents Section ---
+            from nexus.app import NexusApp
+            if isinstance(self.app, NexusApp):
+                recents = self.app.container.state_manager.get_recents()
+                if recents:
+                     # Find project objects for recent paths
+                    recent_projects = []
+                    for path_str in recents:
+                        # Find matching project in discovered list
+                        match = next((p for p in self.projects if str(p.path) == path_str), None)
+                        if match:
+                            recent_projects.append(match)
+                    
+                    if recent_projects:
+                        project_list.append(ListItem(Label("[bold yellow]Recent Projects[/]"), classes="list-item"))
+                        for proj in recent_projects:
+                             project_list.append(ProjectListItem(project_data=proj))
+                        
+                        project_list.append(ListItem(Label("[bold blue]All Projects[/]"), classes="list-item"))
+                        
+                        # Filter out recents from main list to avoid duplication
+                        recent_paths = {str(p.path) for p in recent_projects}
+                        for project in self.projects:
+                            if str(project.path) not in recent_paths:
+                                project_list.append(ProjectListItem(project_data=project))
+                        return
+
+        # --- Fuzzy Search or Default List ---
+        if filter_text:
+            # Prepare data for fuzzy matching
+            choices = {p.name: p for p in self.projects}
+            # extract returns list of (choice, score, key)
+            results = process.extract(filter_text, choices.keys(), limit=20)
+            
+            for name, score in results:
+                if score > 40: # Threshold
+                    project = choices[name]
+                    project_list.append(ProjectListItem(project_data=project))
+        else:
+            # Default lexical sort
+            for project in self.projects:
+                project_list.append(ProjectListItem(project_data=project))
 
         # Check if list is effectively empty
         if not project_list.children:
-            project_list.display = False
             project_list.display = False
             empty_lbl = self.query_one("#projects-empty", Label)
             empty_lbl.remove_class("hidden")
@@ -159,9 +196,10 @@ class ProjectPicker(Screen[None]):
                 import asyncio
 
                 async def refresh() -> None:
-                    root = get_project_root()
-                    self.projects = await scan_projects(root)
-                    self.populate_list(filter_text=new_project_name)
+                    if isinstance(self.app, NexusApp):
+                        root = get_project_root()
+                        self.projects = await self.app.container.scanner.scan_projects(root)
+                        self.populate_list(filter_text=new_project_name)
 
                 asyncio.create_task(refresh())
 
@@ -171,12 +209,19 @@ class ProjectPicker(Screen[None]):
         project = item.project_data
         if project:
             with self.app.suspend():
-                if launch_tool(self.selected_tool.command, project.path):
-                    pass
-                else:
-                    self.app.notify(
-                        f"Failed to launch {self.selected_tool.label}", severity="error"
-                    )
+                from nexus.app import NexusApp
+
+                if isinstance(self.app, NexusApp):
+                    if self.app.container.executor.launch_tool(
+                        self.selected_tool.command, project.path
+                    ):
+                        # Save to Recents
+                        self.app.container.state_manager.add_recent(str(project.path))
+                        pass
+                    else:
+                        self.app.notify(
+                            f"Failed to launch {self.selected_tool.label}", severity="error"
+                        )
             self.app.refresh()
             self.app.pop_screen()
 
@@ -203,7 +248,3 @@ class ProjectPicker(Screen[None]):
         project_list = self.query_one("#project-list", ListView)
         if project_list.index is not None:
             self._select_item(project_list.children[project_list.index])
-
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Added module docstring.

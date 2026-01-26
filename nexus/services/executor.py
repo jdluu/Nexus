@@ -3,6 +3,7 @@
 Handles the subprocess execution logic for running external tools within the terminal.
 """
 
+import os
 import shlex
 import subprocess
 from pathlib import Path
@@ -26,7 +27,9 @@ def launch_tool(command: str, project_path: Path | None = None) -> bool:
     if not command:
         return False
 
-    cmd_parts = shlex.split(command)
+    # On Windows, shlex should be in non-POSIX mode to handle backslashes correctly
+    is_windows = os.name == "nt"
+    cmd_parts = shlex.split(command, posix=not is_windows)
 
     if project_path:
         cmd_parts.append(str(project_path))
@@ -41,6 +44,3 @@ def launch_tool(command: str, project_path: Path | None = None) -> bool:
     except (FileNotFoundError, OSError):
         return False
 
-# Summary:
-# Added module docstring.
-# Expanded function docstring with context about blocking behavior.

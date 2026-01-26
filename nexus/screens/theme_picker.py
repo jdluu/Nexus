@@ -99,6 +99,3 @@ class ThemePicker(ModalScreen[None]):
         self.on_preview_callback(self.original_theme)
         self.dismiss()
 
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Added class and module docstrings.
