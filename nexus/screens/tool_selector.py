@@ -20,12 +20,12 @@ from nexus.widgets.tool_list_item import CategoryListItem, ToolListItem
 class SearchInput(Input):
     """Custom input that doesn't consume navigation keys, letting them bubble."""
     
-    def on_key(self, event: Key) -> None:
+    async def _on_key(self, event: Key) -> None:
         if event.key in ("up", "down", "enter", "escape"):
-            # Don't stop propagation, let screen bindings or on_key handle them
+            # Don't stop propagation, let screen on_key handle them
             return
         # Let default Input behavior handle characters, backspace, etc.
-        super().on_key(event)
+        await super()._on_key(event)
 
 
 class ToolSelector(Screen[None]):
