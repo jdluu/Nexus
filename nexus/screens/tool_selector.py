@@ -178,8 +178,8 @@ class ToolSelector(Screen[None]):
         """
         self.add_class(self.THEMES[self.current_theme_index])
         self.populate_categories()
-        # Default focus to categories
-        self.query_one("#category-list").focus()
+        # Default focus to search for "type anywhere" feel
+        self.query_one("#tool-search").focus()
 
         # Report any config errors from loading phase
         from nexus.config import CONFIG_ERRORS
@@ -205,6 +205,11 @@ class ToolSelector(Screen[None]):
             if event.value:
                 self.select_all_category()
             self.refresh_tools()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Called when Enter is pressed in the search input."""
+        if event.input.id == "tool-search":
+            self.action_launch_current()
 
     def action_focus_search(self) -> None:
         """Focuses the search input and clears it."""
@@ -371,7 +376,18 @@ class ToolSelector(Screen[None]):
 
     def action_cursor_down(self) -> None:
         """Moves selection down in the active list."""
-        if self.query_one("#category-list").has_focus:
+        focused = self.app.focused
+        
+        # If search or tool-list is focused, move tool selection
+        if focused and (focused.id == "tool-list" or focused.id == "tool-search"):
+            tool_list = self.query_one("#tool-list", ListView)
+            if tool_list.index is None:
+                tool_list.index = 0
+            else:
+                tool_list.index = min(len(tool_list.children) - 1, tool_list.index + 1)
+        
+        # If category-list is focused, move category selection
+        elif focused and focused.id == "category-list":
             category_list = self.query_one("#category-list", ListView)
             if category_list.index is None:
                 category_list.index = 0
@@ -380,22 +396,17 @@ class ToolSelector(Screen[None]):
                     len(category_list.children) - 1, category_list.index + 1
                 )
 
-        elif self.query_one("#tool-list").has_focus:
-            tool_list = self.query_one("#tool-list", ListView)
-            if tool_list.index is None:
-                tool_list.index = 0
-            else:
-                tool_list.index = min(len(tool_list.children) - 1, tool_list.index + 1)
-
     def action_cursor_up(self) -> None:
         """Moves selection up in the active list."""
-        if self.query_one("#category-list").has_focus:
-            lst = self.query_one("#category-list", ListView)
+        focused = self.app.focused
+        
+        if focused and (focused.id == "tool-list" or focused.id == "tool-search"):
+            lst = self.query_one("#tool-list", ListView)
             if lst.index is not None:
                 lst.index = max(0, lst.index - 1)
-
-        elif self.query_one("#tool-list").has_focus:
-            lst = self.query_one("#tool-list", ListView)
+        
+        elif focused and focused.id == "category-list":
+            lst = self.query_one("#category-list", ListView)
             if lst.index is not None:
                 lst.index = max(0, lst.index - 1)
 
