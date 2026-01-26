@@ -1,6 +1,6 @@
 # Nexus Wiki
 
-Welcome to the Nexus documentation. Nexus is a cross-platform terminal user interface designed to streamline development workflows by providing a centralized dashboard for tool orchestration and project management.
+Welcome to the Nexus documentation. Nexus is a TUI orchestrator designed to centralize your terminal utilities and projects, removing the need to memorize every command and flag.
 
 ## Installation
 
