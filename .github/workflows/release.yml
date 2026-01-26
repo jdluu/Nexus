@@ -16,9 +16,6 @@ jobs:
         with:
           version: "latest"
       
-      - name: Bump Version
-        run: uv version bump patch
-        
       - name: Build Package
         run: uv build
         

@@ -186,6 +186,13 @@ class ToolSelector(Screen[None]):
         for error in CONFIG_ERRORS:
             self.app.notify(error, title="Config Error", severity="error", timeout=5.0)
 
+    def select_all_category(self) -> None:
+        """Selects the 'ALL' category in the list."""
+        category_list = self.query_one("#category-list", ListView)
+        # Assuming ALL is always index 1 (FAVORITES is 0)
+        if category_list.index != 1:
+            category_list.index = 1
+
     def on_input_changed(self, event: Input.Changed) -> None:
         """Called when the search input changes.
 
