@@ -21,21 +21,35 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environment & Environments
 .venv/
 venv/
 ENV/
+.env
+.env.*
 
-# Development Tools
+# Development Tools & Caches
 .python-version
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
+.tox/
+.nox/
 
-# OS
+# Coverage
+.coverage
+htmlcov/
+.coverage.*
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project Specific
 nexus.egg-info/
 nexus/tools.local.toml
+tools.local.toml
+*.local.toml
