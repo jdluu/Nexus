@@ -6,7 +6,8 @@ Nexus is a terminal interface designed for creating efficient development workfl
 
 *   Python 3.12 or newer.
 *   The `uv` package manager.
-*   A modern terminal emulator such as Windows Terminal, ghostty, or iTerm2.
+*   **Recommended**: A modern terminal emulator with TrueColor support (e.g., [Windows Terminal](https://aka.ms/terminal), [ghostty](https://ghostty.org/), [Kitty](https://sw.kovidgoyal.net/kitty/), or [WezTerm](https://wezfurlong.org/wezterm/)).
+*   **Recommended**: A [Nerd Font](https://www.nerdfonts.com/) for optimal icon rendering.
 
 ## Installation
 
