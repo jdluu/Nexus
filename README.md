@@ -1,6 +1,6 @@
 # Nexus
 
-Nexus is a terminal interface designe for creating efficient development workflows. It serves as a centralized dashboard for launching command line utilities and managing projects across various operating systems.
+Nexus is a terminal interface designed for creating efficient development workflows. It serves as a centralized dashboard for launching command line utilities and managing projects across various operating systems.
 
 ## Prerequisites
 
@@ -10,17 +10,16 @@ Nexus is a terminal interface designe for creating efficient development workflo
 
 ## Installation
 
-```bash
-# Stable release (recommended)
-uv tool install git+https://github.com/jdluu/Nexus@v1.0.0
+Install Nexus globally using the `uv` tool manager:
 
-# Latest development (unstable)
-uv tool install git+https://github.com/jdluu/Nexus@main
+```bash
+# Always latest stable
+uv tool install nexus
 ```
 
 ### Upgrade
 
-To update an existing installation:
+To update to the latest version:
 ```bash
 uv tool upgrade nexus
 ```
@@ -89,7 +88,7 @@ toggle_favorite = "ctrl+f"
 
 ## Usage
 
-Launch the application command:
+Launch the application using the following command:
 
 ```bash
 nexus
