@@ -4,16 +4,19 @@ Welcome to the Nexus documentation. Nexus is a cross-platform terminal user inte
 
 ## Installation
 
-Nexus can be installed directly from the GitHub repository using the `uv` tool manager.
-
-### Standard Installation
 ```bash
-uv tool install git+https://github.com/jdluu/Nexus
+# Stable release (recommended)
+uv tool install git+https://github.com/jdluu/Nexus@v1.0.0
+
+# Latest development (unstable)
+uv tool install git+https://github.com/jdluu/Nexus@main
 ```
 
-### Force Update
+## Upgrade
+
+To update an existing installation:
 ```bash
-uv tool install --force git+https://github.com/jdluu/Nexus
+uv tool upgrade nexus
 ```
 
 ## Core Features
