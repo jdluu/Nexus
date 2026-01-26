@@ -25,10 +25,8 @@ Screen {
     width: 60%;
     margin-left: 2;
     padding: 0 1;
-    background: $surface;
-    color: $text;
-    border: tall $border;
     height: 3;
+    /* Colors/Borders moved to theme sections */
 }
 
 #tool-description {
@@ -151,6 +149,11 @@ ListItem {
 .theme-dark #left-pane { border-right: solid #c0caf5; }
 .theme-dark .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-dark #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
+.theme-dark #tool-search {
+    background: #292e42;
+    color: #c0caf5;
+    border: tall #7aa2f7;
+}
 
 /* Highlight - Dark (Only when list has focus OR it is the tool-list) */
 .theme-dark ListView:focus > ListItem.--highlight,
@@ -196,6 +199,11 @@ ListItem {
 .theme-storm #left-pane { border-right: solid #c0caf5; }
 .theme-storm .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-storm #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
+.theme-storm #tool-search {
+    background: #414868;
+    color: #c0caf5;
+    border: tall #bb9af7;
+}
 
 /* Highlight - Storm (Only when list has focus OR it is the tool-list) */
 .theme-storm ListView:focus > ListItem.--highlight,
@@ -242,6 +250,11 @@ ListItem {
 .theme-light #left-pane { border-right: solid #343b58; }
 .theme-light .pane-header-container { border-bottom: solid #343b58; }
 .theme-light #tool-description { color: #8c4351; border-top: solid #343b58; }
+.theme-light #tool-search {
+    background: #ffffff;
+    color: #343b58;
+    border: tall #343b58;
+}
 
 /* Highlight - Light (Only when list has focus OR it is the tool-list) */
 .theme-light ListView:focus > ListItem.--highlight,
