@@ -36,7 +36,7 @@ You can override default key sequences in the `[keybindings]` section.
 
 ```toml
 [keybindings]
-quit = "ctrl+q"
-toggle_favorite = "f"
+quit = "ctrl+c"
+toggle_favorite = "ctrlf"
 back = "escape"
 ```
