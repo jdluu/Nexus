@@ -29,7 +29,7 @@ async def test_app_startup_and_help() -> None:
 async def test_navigation() -> None:
     """Test basic navigation in the tool selector."""
     app = NexusApp()
-    async with app.run_test() as pilot:
+    async with app.run_test(size=(120, 40)) as pilot:
         await pilot.pause()
         screen = app.screen
         assert isinstance(screen, ToolSelector)
