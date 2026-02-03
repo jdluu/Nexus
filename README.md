@@ -6,7 +6,7 @@ Think of Nexus as a launcher for terminal tools, similar to how Raycast or Alfre
 
 **Source Code**: https://github.com/jdluu/Nexus
 
-![Nexus Logic Demo](docs/nexus_demo.png)
+![Nexus Logic Demo](https://raw.githubusercontent.com/jdluu/Nexus/main/docs/nexus_demo.png)
 *Caption: Main dashboard showing projects and tools.*
 
 ## Prerequisites
