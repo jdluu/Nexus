@@ -63,8 +63,11 @@ def _load_config_data() -> dict[str, Any]:
                     if "project_root" in data:
                         merged_data["project_root"] = data["project_root"]
 
-            except Exception as e:
+            except (tomllib.TOMLDecodeError, PermissionError) as e:
                 CONFIG_ERRORS.append(f"Error in {path.name}: {e}")
+            except Exception as e:
+                # Catch-all for other unexpected IO errors
+                CONFIG_ERRORS.append(f"Unexpected error reading {path.name}: {e}")
 
     for path in CONFIG_PATHS:
         merge_from_file(path)
@@ -109,11 +112,16 @@ def get_tools() -> list[Tool]:
     Returns:
         A list of Tool objects.
     """
+    from pydantic import ValidationError
+
     tools = []
     config = _load_config_data()
     for t in config.get("tool", []):
         try:
             tools.append(Tool(**t))
+        except ValidationError as e:
+            # Pydantic validation error
+            CONFIG_ERRORS.append(f"Invalid tool definition (Validation): {e}")
         except Exception as e:
             CONFIG_ERRORS.append(f"Invalid tool definition: {e}")
             continue

@@ -36,11 +36,15 @@ class StateManager:
                 log.error("load_state_failed", error=str(e))
 
     def _save(self) -> None:
-        """Saves state to disk."""
+        """Saves state to disk (atomic)."""
         try:
             STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(STATE_FILE, "w") as f:
+            tmp_file = STATE_FILE.with_suffix(".tmp")
+            with open(tmp_file, "w") as f:
                 json.dump(self._state, f, indent=2)
+            
+            # Atomic replace
+            tmp_file.replace(STATE_FILE)
         except Exception as e:
             log.error("save_state_failed", error=str(e))
 

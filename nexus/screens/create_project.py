@@ -109,7 +109,3 @@ class CreateProject(ModalScreen[None]):
     def action_cancel(self) -> None:
         """Cancels the action and closes the modal."""
         self.dismiss()
-
-# Summary:
-# Formatted docstrings to strict Google Style.
-# Added module docstring.
