@@ -10,10 +10,11 @@ from nexus.config import get_project_root
 from nexus.models import Project, Tool
 from typing import Any
 from nexus.widgets.tool_list_item import ProjectListItem
+from nexus.widgets.footer import NexusFooter, KeyBadge
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, LoadingIndicator
+from textual.widgets import Header, Input, Label, ListItem, ListView, LoadingIndicator
 from thefuzz import process
 
 
@@ -43,6 +44,8 @@ class ProjectPicker(Screen[None]):
         ("down", "cursor_down", "Next Item"),
         ("up", "cursor_up", "Previous Item"),
         ("enter", "select_current", "Select"),
+        ("ctrl+b", "back", "Back"),
+        ("ctrl+c", "quit", "Quit"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -63,7 +66,11 @@ class ProjectPicker(Screen[None]):
             yield Label(
                 "No projects found", id="projects-empty", classes="empty-state hidden"
             )
-        yield Footer()
+        yield NexusFooter(key_defs=[
+            ("Enter", "Select", "select_current"),
+            ("Ctrl+B", "Back", "back"),
+            ("Ctrl+C", "Quit", "quit"),
+        ])
 
     async def on_mount(self) -> None:
         """Called when the screen is mounted.
@@ -248,3 +255,17 @@ class ProjectPicker(Screen[None]):
         project_list = self.query_one("#project-list", ListView)
         if project_list.index is not None:
             self._select_item(project_list.children[project_list.index])
+            
+    def action_back(self) -> None:
+        """Go back to the previous screen."""
+        self.app.pop_screen()
+            
+    def on_key_badge_pressed(self, message: KeyBadge.Pressed) -> None:
+        """Handle footer clicks."""
+        action = message.action
+        if action == "select_current":
+            self.action_select_current()
+        elif action == "back":
+            self.action_back()
+        elif action == "quit":
+            self.app.exit()

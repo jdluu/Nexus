@@ -41,10 +41,11 @@ class HelpScreen(ModalScreen[None]):
 - Type any character to start searching tools.
 - `Esc` : Clear search or Go Back.
 
-**System**
-- `Ctrl+t` : Open Theme Picker
-- `Ctrl+c` : Quit Application
-- `?` or `F1`: Show this Help Screen
+**Actions**
+- `Ctrl+F` : Toggle Favorite
+- `Ctrl+T` : Open Theme Picker
+- `Ctrl+C` : Quit Application
+- `Ctrl+H` or `?` : Show this Help Screen
                     """
                 )
 

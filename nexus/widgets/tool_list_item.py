@@ -16,7 +16,6 @@ class ToolItem(Static):
     def __init__(
         self,
         tool_info: Tool,
-        hint: str = "",
         is_favorite: bool = False,
         **kwargs: Any,
     ):
@@ -24,13 +23,11 @@ class ToolItem(Static):
 
         Args:
             tool_info: The Tool model containing tool details.
-            hint: Optional numeric hint (e.g. '1').
             is_favorite: Whether the tool is marked as a favorite.
             **kwargs: Additional arguments passed to the Static widget.
         """
         super().__init__(**kwargs)
         self.tool_info = tool_info
-        self.hint = hint
         self.is_favorite = is_favorite
         self.can_focus = True
 
@@ -40,10 +37,9 @@ class ToolItem(Static):
         Returns:
             A string representation of the tool label prefixed with '> '.
         """
-        hint_str = f"[bold magenta]{self.hint}[/] " if self.hint else ""
         fav_str = "[bold yellow]★[/] " if self.is_favorite else ""
         label = self.tool_info.label
-        return f"{hint_str}{fav_str}> {label} | [dim]{self.tool_info.description}[/]"
+        return f"{fav_str}> [bold]{label}[/] | [#565f89]{self.tool_info.description}[/]"
 
     def on_mount(self) -> None:
         """Called when the widget is mounted.
@@ -51,6 +47,8 @@ class ToolItem(Static):
         Adds specific CSS classes for styling.
         """
         self.add_class("list-item")
+        if self.is_favorite:
+            self.add_class("--favorite")
         self.add_class(f"category-{self.tool_info.category}")
 
 
@@ -105,7 +103,6 @@ class ToolListItem(ListItem):
     def __init__(
         self,
         tool_info: Tool,
-        hint: str = "",
         is_favorite: bool = False,
         **kwargs: Any,
     ):
@@ -113,13 +110,12 @@ class ToolListItem(ListItem):
 
         Args:
             tool_info: The Tool model.
-            hint: Optional numeric hint.
             is_favorite: Whether the tool is a favorite.
             **kwargs: Additional arguments passed to the ListItem.
         """
         self.tool_info = tool_info
         super().__init__(
-            ToolItem(tool_info, hint=hint, is_favorite=is_favorite), **kwargs
+            ToolItem(tool_info, is_favorite=is_favorite), **kwargs
         )
 
 

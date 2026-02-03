@@ -17,13 +17,12 @@ Screen {
 }
 
 #header-left {
-    width: auto;
-    content-align: left middle;
+    width: 30%;
+    content-align: center middle;
 }
 
 #tool-search {
-    width: 60%;
-    margin-left: 2;
+    width: 70%;
     padding: 0 1;
     height: 3;
     /* Colors/Borders moved to theme sections */
@@ -35,8 +34,8 @@ Screen {
     text-style: bold;
 }
 
-/* Main Container */
-#main-container {
+/* Main Container (implicit in ToolBrowser now) */
+ToolBrowser {
     height: 1fr;
     /* Borders defined in theme */
 }
@@ -51,6 +50,15 @@ Screen {
 #right-pane {
     width: 70%;
     height: 100%;
+}
+
+/* --- RESPONSIVE / COMPACT MODE --- */
+ToolBrowser.compact #left-pane {
+    display: none;
+}
+
+ToolBrowser.compact #right-pane {
+    width: 100%;
 }
 
 .pane-header {
@@ -97,13 +105,6 @@ ListItem {
     margin-right: 1;
 }
 
-#custom-footer {
-    height: 4;
-    dock: bottom;
-    padding: 0 1;
-}
-
-
 .hidden {
     display: none;
 }
@@ -134,7 +135,7 @@ ListItem {
 
 .theme-dark #header, 
 .theme-dark .pane-header, 
-.theme-dark #footer-container {
+.theme-dark NexusFooter {
     background: #101010;
     color: #c0caf5;
 }
@@ -145,7 +146,7 @@ ListItem {
 }
 
 .theme-dark #header-right { border: solid #c0caf5; }
-.theme-dark #main-container { border-top: solid #c0caf5; } /* removed bottom border */
+.theme-dark ToolBrowser { border-top: solid #c0caf5; } /* removed bottom border */
 .theme-dark #left-pane { border-right: solid #c0caf5; }
 .theme-dark .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-dark #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
@@ -189,13 +190,13 @@ ListItem {
 
 .theme-storm #header, 
 .theme-storm .pane-header, 
-.theme-storm #footer-container {
+.theme-storm NexusFooter {
     background: #24283b;
     color: #c0caf5;
 }
 
 .theme-storm #header-right { border: solid #c0caf5; }
-.theme-storm #main-container { border-top: solid #c0caf5; } /* removed bottom border */
+.theme-storm ToolBrowser { border-top: solid #c0caf5; } /* removed bottom border */
 .theme-storm #left-pane { border-right: solid #c0caf5; }
 .theme-storm .pane-header-container { border-bottom: solid #c0caf5; }
 .theme-storm #tool-description { color: #bb9af7; border-top: solid #c0caf5; }
@@ -240,13 +241,13 @@ ListItem {
 
 .theme-light #header, 
 .theme-light .pane-header, 
-.theme-light #footer-container {
+.theme-light NexusFooter {
     background: #d5d6db;
     color: #343b58;
 }
 
 .theme-light #header-right { border: solid #343b58; }
-.theme-light #main-container { border-top: solid #343b58; } /* removed bottom border */
+.theme-light ToolBrowser { border-top: solid #343b58; } /* removed bottom border */
 .theme-light #left-pane { border-right: solid #343b58; }
 .theme-light .pane-header-container { border-bottom: solid #343b58; }
 .theme-light #tool-description { color: #8c4351; border-top: solid #343b58; }
@@ -342,7 +343,7 @@ ThemePicker {
 
 
 /* --- NEW FOOTER --- */
-#footer-container {
+NexusFooter {
     height: 3; 
     dock: bottom;
     padding: 0 1; 
@@ -366,6 +367,7 @@ ThemePicker {
     padding: 0 1;
     text-style: bold;
     margin-right: 1;      /* Add space between badge and desc */
+    width: auto;
 }
 
 .key-desc {
@@ -497,4 +499,51 @@ ThemePicker {
     align: right middle;
     margin-top: 1;
     height: 3;
+}
+
+/* --- POLISH: FAVORITES & FOCUS --- */
+
+/* Favorites Styling (Generic) */
+.list-item.--favorite {
+    color: #ff9e64; /* Orange/Gold for favs */
+    text-style: bold;
+}
+
+/* Pane Headers - De-emphasized */
+.pane-header {
+    color: #565f89;
+    text-style: none; /* Remove underline */
+}
+.pane-header-right {
+    color: #565f89;
+    text-style: italic;
+}
+
+/* Focused Pane Header - Re-emphasize when active */
+#right-pane:focus-within .pane-header,
+#left-pane:focus-within .pane-header {
+    color: $text;
+    text-style: bold;
+}
+
+/* Pane Focus Indication (Stronger Borders + Header Highlight) */
+.theme-dark ToolBrowser:focus-within {
+     border-top: thick #7aa2f7; 
+}
+.theme-dark #left-pane:focus-within {
+    border-right: thick #7aa2f7;
+}
+
+.theme-storm ToolBrowser:focus-within {
+     border-top: thick #bb9af7; 
+}
+.theme-storm #left-pane:focus-within {
+    border-right: thick #bb9af7;
+}
+
+.theme-light ToolBrowser:focus-within {
+     border-top: thick #3d59a1; 
+}
+.theme-light #left-pane:focus-within {
+    border-right: thick #3d59a1;
 }
