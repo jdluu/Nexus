@@ -4,7 +4,7 @@ Nexus is a terminal dashboard that lets you launch your favorite CLI and TUI too
 
 Think of Nexus as a launcher for terminal tools, similar to how Raycast or Alfred launch GUI apps.
 
-**Source Code**: https://github.com/jdluu/Nexus | **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+**Source Code**: https://github.com/jdluu/Nexus | **Changelog**: https://github.com/jdluu/Nexus/blob/main/CHANGELOG.md
 
 ![Nexus Logic Demo](https://raw.githubusercontent.com/jdluu/Nexus/main/docs/nexus_demo.png)
 *Caption: Main dashboard showing projects and tools.*

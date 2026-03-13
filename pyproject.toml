@@ -15,7 +15,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/jdluu/Nexus"
 Repository = "https://github.com/jdluu/Nexus"
-Changelog = "https://github.com/jdluu/Nexus/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/jdluu/Nexus/blob/v0.2.0/CHANGELOG.md"
 
 [project.scripts]
 nexus = "nexus.app:main"
