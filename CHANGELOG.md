@@ -2,6 +2,13 @@
 
 All notable changes to the Nexus TUI project will be documented in this file.
 
+## [0.2.1] - 2026-03-12
+### Fixed
+- **CI/CD Stability**: Resolved flakiness in automated UI tests during release workflows.
+- **Project Picker**: Fixed `SuspendNotSupported` error in headless environments.
+- **Command Palette**: Improved global command discovery and search robustness.
+- **Documentation**: Updated absolute GitHub URLs for PyPI compatibility.
+
 ## [0.2.0] - 2026-03-12
 ### Added
 - **Command Palette Integration**: Press `Ctrl+P` from any screen to search and launch tools instantly.
