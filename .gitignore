@@ -1,10 +1,14 @@
-# Python
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+*.egg-info/
+*.egg
+nexus.egg-info/
+
+# --- Build & Distribution ---
 build/
 develop-eggs/
 dist/
@@ -17,18 +21,19 @@ parts/
 sdist/
 var/
 wheels/
-*.egg-info/
 .installed.cfg
-*.egg
 
-# Virtual Environment & Environments
+# --- Virtual Environments ---
 .venv/
 venv/
 ENV/
+env/
+
+# --- Environment Variables & Secrets ---
 .env
 .env.*
 
-# Development Tools & Caches
+# --- Development Tools & Caches ---
 .python-version
 .ruff_cache/
 .pytest_cache/
@@ -36,20 +41,24 @@ ENV/
 .tox/
 .nox/
 
-# Coverage
+# --- Coverage & Testing ---
 .coverage
-htmlcov/
 .coverage.*
+htmlcov/
+coverage.xml
+pytest.xml
+tests/results/
 
-# IDEs & Editors
+# --- IDEs, Editors & OS ---
 .vscode/
 .idea/
 *.swp
+*.swo
 .DS_Store
 Thumbs.db
 
-# Project Specific
-nexus.egg-info/
+# --- Nexus Specific ---
 nexus/tools.local.toml
 tools.local.toml
 *.local.toml
+state.json
