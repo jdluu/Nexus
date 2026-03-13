@@ -13,22 +13,21 @@ from nexus.models import Project
 async def scan_projects(root_path: Path) -> list[Project]:
     """Scans the root path for project directories asynchronously.
 
-    Identifies directories and checks for the presence of a `.git` folder to
-    mark them as git repositories. The I/O operation runs in a separate thread.
+    Identifies directories and verifies the existence of a .git folder to
+    detect version controlled repositories. IO operations are executed in
+    a background thread to prevent blocking the application event loop.
 
     Args:
         root_path: The root directory to scan for subdirectories.
 
     Returns:
-        A list of Project objects representing the found directories, sorted
-        alphabetically by name.
+        A list of Project objects representing the identified directories.
+        The list is sorted alphabetically by directory name.
     """
     if not root_path.exists():
         return []
 
     projects = []
-
-    # Run directory listing in a thread to avoid blocking the event loop
     loop = asyncio.get_running_loop()
 
     def get_dirs() -> list[Path]:

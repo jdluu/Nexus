@@ -1,32 +1,39 @@
-"""Logging configuration for Nexus.
+"""Logging configuration for the Nexus application.
 
-Configures structlog to write asynchronous logs to a rotating file in the user's
-cache directory, ensuring it does not interfere with the TUI.
+Configures structural logging to write asynchronous records to a rotating 
+file in the user's cache directory.
 """
 
 import logging
-
 from pathlib import Path
 from typing import Any
-
+import platformdirs
 import structlog
 
-# Define log path
-LOG_DIR = Path.home() / ".cache" / "nexus"
+# Define the log directory and file path using cross-platform standards.
+LOG_DIR = Path(platformdirs.user_cache_dir("nexus"))
 LOG_FILE = LOG_DIR / "nexus.log"
 
 
 def configure_logging() -> None:
-    """Configures structural logging."""
-    if not LOG_DIR.exists():
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
+    """Configures structured logging for the application.
 
-    # Configure standard logging to file
-    logging.basicConfig(
-        filename=str(LOG_FILE),
-        level=logging.INFO,
-        format="%(message)s",
-    )
+    Creates the necessary log directory and initializes the structlog 
+    processors for JSON output to the log file.
+    """
+    try:
+        if not LOG_DIR.exists():
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Ensure we can write to the log file
+        logging.basicConfig(
+            filename=str(LOG_FILE),
+            level=logging.INFO,
+            format="%(message)s",
+        )
+    except (PermissionError, OSError):
+        # Fallback to no-op logging if the filesystem is inaccessible
+        logging.basicConfig(level=logging.CRITICAL + 1)
 
     structlog.configure(
         processors=[
@@ -44,5 +51,12 @@ def configure_logging() -> None:
 
 
 def get_logger(name: str = "nexus") -> Any:
-    """Returns a structured logger instance."""
+    """Retrieves a structured logger instance.
+
+    Args:
+        name: The name of the logger instance.
+
+    Returns:
+        A structlog logger configured for the application.
+    """
     return structlog.get_logger(name)

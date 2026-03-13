@@ -13,7 +13,7 @@ from typing import Any
 import platformdirs
 from nexus.models import Tool
 
-# Configuration Paths in priority order (lowest to highest)
+# Configuration paths in priority order (lowest to highest).
 CWD_NEXUS_CONFIG = Path.cwd() / "nexus" / "tools.local.toml"
 CWD_CONFIG = Path.cwd() / "tools.local.toml"
 USER_CONFIG_PATH = Path(platformdirs.user_config_dir("nexus", roaming=True)) / "tools.toml"
@@ -29,160 +29,156 @@ CONFIG_PATHS = [
 ]
 
 
-# Global error tracking for configuration loading
-CONFIG_ERRORS: list[str] = []
-_CONFIG_CACHE: dict[str, Any] | None = None
+class ConfigManager:
+    """Manages application configuration loading and caching.
 
-
-def _load_config_data() -> dict[str, Any]:
-    """Loads and merges configuration data from all sources (Lazy).
-
-    Iterates through configuration paths in priority order and merges meaningful
-    data (tools, project root) into a single dictionary.
-
-    Returns:
-        A dictionary containing the merged configuration data.
+    Provides methods to retrieve project root, tools, and keybindings
+    from various configuration sources.
     """
-    global _CONFIG_CACHE
-    if _CONFIG_CACHE is not None:
-        return _CONFIG_CACHE
 
-    merged_data: dict[str, Any] = {"tool": [], "project_root": None}
+    def __init__(self) -> None:
+        """Initializes the ConfigManager with an empty cache."""
+        self._config_cache: dict[str, Any] | None = None
+        self.config_errors: list[str] = []
 
-    def merge_from_file(path: Path) -> None:
-        if path.exists():
+    def _load_config_data(self) -> dict[str, Any]:
+        """Loads and merges configuration data from all identified sources.
+
+        Returns:
+            A dictionary containing the merged configuration data.
+        """
+        if self._config_cache is not None:
+            return self._config_cache
+
+        # Use a dict for tools to allow overrides by label
+        merged_tools: dict[str, dict[str, Any]] = {}
+        merged_data: dict[str, Any] = {
+            "project_root": None, 
+            "keybindings": {},
+            "light_theme": "tokyo-night-light",
+            "dark_theme": "tokyo-night-dark"
+        }
+
+        def merge_from_file(path: Path) -> None:
+            if path.exists():
+                try:
+                    with open(path, "rb") as f:
+                        data = tomllib.load(f)
+
+                        if "tool" in data and isinstance(data["tool"], list):
+                            for tool_def in data["tool"]:
+                                if isinstance(tool_def, dict) and "label" in tool_def:
+                                    merged_tools[tool_def["label"]] = tool_def
+
+                        if "project_root" in data and data["project_root"]:
+                            merged_data["project_root"] = data["project_root"]
+                            
+                        if "light_theme" in data:
+                            merged_data["light_theme"] = data["light_theme"]
+                        
+                        if "dark_theme" in data:
+                            merged_data["dark_theme"] = data["dark_theme"]
+
+                        if "keybindings" in data and isinstance(data["keybindings"], dict):
+                            merged_data["keybindings"].update(data["keybindings"])
+
+                except (tomllib.TOMLDecodeError, PermissionError) as e:
+                    self.config_errors.append(f"Error in {path.name}: {e}")
+                except Exception as e:
+                    self.config_errors.append(f"Unexpected error reading {path.name}: {e}")
+
+        for path in CONFIG_PATHS:
+            merge_from_file(path)
+
+        merged_data["tool"] = list(merged_tools.values())
+        self._config_cache = merged_data
+        return merged_data
+
+    def get_project_root(self) -> Path:
+        """Determines the project root directory based on configuration.
+
+        Returns:
+            The resolved project root path.
+        """
+        env_root = os.environ.get("NEXUS_PROJECT_ROOT")
+        if env_root:
+            return Path(env_root).expanduser()
+
+        config = self._load_config_data()
+        if config_root := config.get("project_root"):
+            path_str = str(config_root)
+            if path_str.startswith("~"):
+                return Path(path_str).expanduser()
+            return Path(path_str)
+
+        return Path.home() / "Projects"
+
+    def get_tools(self) -> list[Tool]:
+        """Retrieves the list of configured tools.
+
+        Returns:
+            A list of validated Tool objects.
+        """
+        from pydantic import ValidationError
+
+        tools = []
+        config = self._load_config_data()
+        for t in config.get("tool", []):
             try:
-                with open(path, "rb") as f:
-                    data = tomllib.load(f)
-
-                    # Replacement strategy: If a config file defines tools,
-                    # it replaces the set of tools from lower-priority configs.
-                    if "tool" in data and data["tool"]:
-                        merged_data["tool"] = data["tool"]
-
-                    if "project_root" in data:
-                        merged_data["project_root"] = data["project_root"]
-
-            except (tomllib.TOMLDecodeError, PermissionError) as e:
-                CONFIG_ERRORS.append(f"Error in {path.name}: {e}")
+                tools.append(Tool(**t))
+            except ValidationError as e:
+                self.config_errors.append(f"Invalid tool definition (Validation): {e}")
             except Exception as e:
-                # Catch-all for other unexpected IO errors
-                CONFIG_ERRORS.append(f"Unexpected error reading {path.name}: {e}")
+                self.config_errors.append(f"Invalid tool definition: {e}")
+                continue
+        return tools
 
-    for path in CONFIG_PATHS:
-        merge_from_file(path)
+    def get_keybindings(self) -> dict[str, str]:
+        """Retrieves the keybinding configuration.
 
-    _CONFIG_CACHE = merged_data
-    return merged_data
+        Returns:
+            A dictionary mapping action names to key sequences.
+        """
+        defaults = {
+            "quit": "q",
+            "force_quit": "ctrl+c",
+            "back": "escape",
+            "theme": "ctrl+t",
+            "help": "?",
+            "fuzzy_search": "ctrl+f",
+        }
 
+        config = self._load_config_data()
+        user_bindings = config.get("keybindings", {})
+        return {**defaults, **user_bindings}
 
-def get_project_root() -> Path:
-    """Returns the project root directory.
+    def get_theme_pair(self) -> tuple[str, str]:
+        """Retrieves the preferred light and dark theme names.
 
-    Priority:
-    1. NEXUS_PROJECT_ROOT environment variable
-    2. 'project_root' in configuration files
-    3. Default: ~/Projects
-
-    Returns:
-        The defined project root path.
-    """
-    # 1. Environment Variable
-    env_root = os.environ.get("NEXUS_PROJECT_ROOT")
-    if env_root:
-        return Path(env_root).expanduser()
-
-    # 2. Configuration File
-    config = _load_config_data()
-    if config_root := config.get("project_root"):
-        path_str = str(config_root)
-        if path_str.startswith("~"):
-            return Path(path_str).expanduser()
-        return Path(path_str)
-
-    # 3. Default
-    return Path.home() / "Projects"
+        Returns:
+            A tuple of (light_theme_name, dark_theme_name).
+        """
+        config = self._load_config_data()
+        return (
+            config.get("light_theme", "tokyo-night-light"),
+            config.get("dark_theme", "tokyo-night-dark")
+        )
 
 
-def get_tools() -> list[Tool]:
-    """Returns the list of configured tools.
-
-    Parses the configuration data into Tool models, skipping any invalid entries.
-
-    Returns:
-        A list of Tool objects.
-    """
-    from pydantic import ValidationError
-
-    tools = []
-    config = _load_config_data()
-    for t in config.get("tool", []):
-        try:
-            tools.append(Tool(**t))
-        except ValidationError as e:
-            # Pydantic validation error
-            CONFIG_ERRORS.append(f"Invalid tool definition (Validation): {e}")
-        except Exception as e:
-            CONFIG_ERRORS.append(f"Invalid tool definition: {e}")
-            continue
-    return tools
-
-
-def get_keybindings() -> dict[str, str]:
-    """Returns the keybinding configuration.
-
-    Merges default bindings with user overrides from configuration files.
-
-    Returns:
-        A dictionary mapping action names to key sequences.
-    """
-    defaults = {
-        "quit": "q",
-        "force_quit": "ctrl+c",
-        "back": "escape",
-        "theme": "ctrl+t",
-        "help": "?",
-        "fuzzy_search": "ctrl+f",
-        "toggle_favorite": "f",
-    }
-
-    config = _load_config_data()
-    user_bindings = config.get("keybindings", {})
-    
-    # Merge defaults with user bindings
-    return {**defaults, **user_bindings}
-
-
-CATEGORY_COLORS = {
-    "DEV": "blue",
-    "AI": "purple",
-    "MEDIA": "green",
-    "UTIL": "orange",
-}
-
+# Visual constants.
 USE_NERD_FONTS = True
-
-CATEGORY_ICONS = {
-    "DEV": "",  # fh-fa-code_fork
-    "AI": "",  # fh-fa-microchip
-    "MEDIA": "",  # fh-fa-video_camera
-    "UTIL": "",  # fh-fa-wrench
-    "ALL": "",  # fh-fa-list
-}
 
 
 def get_preferred_terminal() -> str | None:
-    """Determines the available terminal emulator based on a priority list.
+    """Identifies the available terminal emulator based on priority.
 
-    Checks `pyproject.toml` for [tool.nexus.priority_terminals] and falls back
-    to a default list if configuration is missing.
+    Consults the pyproject.toml configuration and falls back to a 
+    standard priority list to find a supported terminal executable.
 
     Returns:
-        The command string for the first found terminal, or None if no supported
-        terminal is found.
+        The executable path for the preferred terminal, or None if not found.
     """
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-
     terminals = ["kitty", "ghostty", "gnome-terminal", "xterm"]
 
     if pyproject_path.exists():

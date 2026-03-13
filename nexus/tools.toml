@@ -1,28 +1,35 @@
-# Default Configuration
-# You can override this by creating a `tools.local.toml` in this directory
-# or `~/.config/nexus/tools.toml` (Linux), `~/Library/Application Support/Nexus/tools.toml` (Mac),
-# or `%LOCALAPPDATA%\Nexus\tools.toml` (Windows).
-
-# To set your project root (where Nexus looks for projects):
-# project_root = "~/Projects" # Tilde is expanded to User Home
+# Nexus Configuration
+# Define where your code projects live
+project_root = "~/Projects"
 
 [[tool]]
-label = "Neovim"
-category = "DEV"
-description = "Hyperextensible text editor"
-command = "nvim"
-requires_project = true
-
-[[tool]]
-label = "Lazygit"
-category = "DEV"
-description = "Git TUI interface"
-command = "lazygit"
-requires_project = true
-
-[[tool]]
-label = "Htop"
+label = "Ping"
 category = "UTIL"
-description = "Process viewer"
-command = "htop"
+description = "Ping google.com with custom flags"
+command = "ping {flags} google.com"
 requires_project = false
+supports_flags = true
+
+[[tool]]
+label = "Echo Project"
+category = "DEV"
+description = "Echo the selected project path and flags"
+command = "echo Project: {project} | Flags: {flags}"
+requires_project = true
+supports_flags = true
+
+[[tool]]
+label = "List Files"
+category = "UTIL"
+description = "List files in project directory"
+command = "ls -la {flags}"
+requires_project = true
+supports_flags = true
+
+[[tool]]
+label = "System Monitor"
+category = "UTIL"
+description = "Launch top"
+command = "top"
+requires_project = false
+supports_flags = false

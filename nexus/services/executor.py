@@ -1,6 +1,7 @@
 """Service for executing tool commands.
 
-Handles the subprocess execution logic for running external tools within the terminal.
+Handles the subprocess execution logic for running external tools within the
+terminal.
 """
 
 import os
@@ -9,38 +10,53 @@ import subprocess
 from pathlib import Path
 
 
-def launch_tool(command: str, project_path: Path | None = None) -> bool:
+def launch_tool(
+    command: str, project_path: Path | None = None, flags: str | None = None
+) -> bool:
     """Launches a tool in the current terminal window.
 
-    This function blocks execution until the tool completes. It should typically
-    be called within a suspended TUI context.
+    This function blocks execution until the tool completes. It replaces
+    command placeholders and manages the working directory.
 
     Args:
         command: The shell command to execute.
-        project_path: Optional working directory for the command.
-            if provided, the command path is appended to the command arguments,
-            and the command is executed in this directory.
+        project_path: Optional working directory and project context.
+        flags: Optional additional command-line arguments.
 
     Returns:
-        True if the process started and exited with return code 0, False otherwise.
+        True if the process started and exited with return code 0, False
+        otherwise.
     """
     if not command:
         return False
 
-    # On Windows, shlex should be in non-POSIX mode to handle backslashes correctly
-    is_windows = os.name == "nt"
-    cmd_parts = shlex.split(command, posix=not is_windows)
+    final_command = command
+    if flags:
+        if "{flags}" in final_command:
+            final_command = final_command.replace("{flags}", flags)
+        else:
+            final_command = f"{final_command} {flags}"
+    else:
+        final_command = final_command.replace("{flags}", "")
 
     if project_path:
-        cmd_parts.append(str(project_path))
+        if "{project}" in final_command:
+            final_command = final_command.replace("{project}", str(project_path))
+        elif "{flags}" not in command:
+            final_command = f"{final_command} {project_path}"
 
-    cwd = project_path if project_path and project_path.exists() else None
+    is_windows = os.name == "nt"
+    try:
+        cmd_parts = shlex.split(final_command, posix=not is_windows)
+    except ValueError:
+        cmd_parts = final_command.split()
+
+    cwd = None
+    if project_path and project_path.exists():
+        cwd = project_path if project_path.is_dir() else project_path.parent
 
     try:
-        # Run tool in the current terminal (blocking execution).
-        # This allows the tool to take over the TUI's terminal IO.
         result = subprocess.run(cmd_parts, cwd=cwd, check=False)
         return result.returncode == 0
     except (FileNotFoundError, OSError):
         return False
-

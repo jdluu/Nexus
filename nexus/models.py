@@ -5,27 +5,28 @@ tools and projects within the application.
 """
 
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel
 
 
 class Tool(BaseModel):
-    """Represents a command-line tool available in Nexus.
+    """Represents a command-line tool configuration.
 
     Attributes:
         label: The display name of the tool.
-        category: The category the tool belongs to (DEV, AI, MEDIA, UTIL).
-        description: A brief description of the tool's purpose.
-        command: The shell command to execute.
-        requires_project: True if the tool needs a project directory to run.
+        category: The category identifier (e.g. DEV, AI, MEDIA, UTIL).
+        description: A brief summary of the tool's functionality.
+        command: The shell command template to execute.
+        requires_project: Indicates if the tool requires a project directory.
+        supports_flags: Indicates if the tool accepts custom command-line flags.
     """
 
     label: str
-    category: Literal["DEV", "AI", "MEDIA", "UTIL"]
+    category: str
     description: str
     command: str
     requires_project: bool
+    supports_flags: bool = False
 
 
 class Project(BaseModel):
