@@ -5,7 +5,7 @@ from typing import Any
 from pathlib import Path
 from unittest.mock import patch, AsyncMock
 from textual.app import App
-from nexus.screens.project_picker import ProjectPicker, AdvancedBrowseModal
+from nexus.screens.project_picker import ProjectPicker
 from nexus.models import Tool, Project
 from textual.widgets import Input, ListView
 
@@ -135,19 +135,17 @@ async def test_project_picker_browse_and_create(
             await pilot.pause(0.1)
 
             # Use dummy screens to avoid flakiness with DirectoryTree or auto-dismissal
-            class MockBrowse(Screen):
+            class MockBrowse(Screen[Any]):
                 pass
 
-            class MockCreate(Screen):
+            class MockCreate(Screen[Any]):
                 def __init__(self, *args: Any, **kwargs: Any) -> None:
                     super().__init__()
 
             # Mock execute_tool_command and app.suspend to avoid SuspendNotSupported in CI
             with (
                 patch.object(app, "suspend"),
-                patch(
-                    "nexus.screens.tool_selector.ToolSelector.execute_tool_command"
-                ),
+                patch("nexus.screens.tool_selector.ToolSelector.execute_tool_command"),
                 patch("nexus.screens.project_picker.AdvancedBrowseModal", MockBrowse),
                 patch("nexus.screens.create_project.CreateProject", MockCreate),
             ):
