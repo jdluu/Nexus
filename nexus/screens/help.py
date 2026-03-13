@@ -1,6 +1,6 @@
 """Help screen for the Nexus application.
 
-Displays information regarding user interface interactions and global 
+Displays information regarding user interface interactions and global
 key bindings using the modern Collapsible widget from Textual.
 """
 
@@ -40,7 +40,7 @@ class HelpScreen(ModalScreen[None]):
 - `Esc` : Return to previous view
                         """
                     )
-                
+
                 with Collapsible(title="Search"):
                     yield Markdown(
                         """
@@ -60,7 +60,7 @@ class HelpScreen(ModalScreen[None]):
 
             with Horizontal(classes="modal-footer-actions"):
                 yield Button("Close", variant="primary", id="btn-close")
-        
+
         yield Footer()
 
     @on(Button.Pressed, "#btn-close")

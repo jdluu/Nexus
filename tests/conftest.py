@@ -1,6 +1,6 @@
 """Pytest configuration and global fixtures.
 
-This module configures the testing environment and ensures the project root 
+This module configures the testing environment and ensures the project root
 is included in the Python path for correct module resolution.
 """
 

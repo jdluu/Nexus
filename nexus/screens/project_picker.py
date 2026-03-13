@@ -35,6 +35,7 @@ class AdvancedBrowseModal(ModalScreen[Path | None]):
 
     def compose(self) -> ComposeResult:
         from nexus.app import NexusApp
+
         root = Path.home()
         if isinstance(self.app, NexusApp):
             root = self.app.container.config_manager.get_project_root()
@@ -91,20 +92,22 @@ class ProjectPicker(Screen[None]):
         yield Header()
         yield Label(f"Launch {self.tool.label}", id="project-picker-header")
         yield Input(placeholder="Search or filter projects...", id="project-search")
-        
+
         with Vertical(id="project-list-container"):
             yield Label("Project History", classes="section-header")
             yield ListView(id="project-list")
             yield Label(
                 "No recent projects. Use 'Browse' to find one.",
                 id="projects-empty",
-                classes="empty-state hidden"
+                classes="empty-state hidden",
             )
 
         with Horizontal(id="project-picker-footer"):
-            yield Button("Browse Filesystem (Ctrl+B)", variant="default", id="btn-browse")
+            yield Button(
+                "Browse Filesystem (Ctrl+B)", variant="default", id="btn-browse"
+            )
             yield Button("Create New Project", variant="primary", id="btn-create")
-        
+
         yield Footer()
 
     def on_mount(self) -> None:
@@ -120,22 +123,26 @@ class ProjectPicker(Screen[None]):
             filter_text: Optional query to filter projects.
         """
         from nexus.container import get_container
-        
+
         root = get_container().config_manager.get_project_root()
         projects = await get_container().scanner.scan_projects(root)
         recents = get_container().state_manager.get_recents()
-        
+
         # Merge scanner results with recents
         all_paths = set(p.path for p in projects)
         for r in recents:
             path_obj = Path(r)
             if r not in all_paths and path_obj.exists():
-                projects.append(Project(name=path_obj.name, path=path_obj, is_git=False))
-        
+                projects.append(
+                    Project(name=path_obj.name, path=path_obj, is_git=False)
+                )
+
         if filter_text:
             projects = [
-                p for p in projects 
-                if filter_text.lower() in p.name.lower() or filter_text.lower() in str(p.path).lower()
+                p
+                for p in projects
+                if filter_text.lower() in p.name.lower()
+                or filter_text.lower() in str(p.path).lower()
             ]
 
         self.app.call_from_thread(self._update_list, projects)
@@ -148,9 +155,9 @@ class ProjectPicker(Screen[None]):
         """
         list_view = self.query_one("#project-list", ListView)
         list_view.clear()
-        
+
         empty_label = self.query_one("#projects-empty", Label)
-        
+
         if not projects:
             empty_label.remove_class("hidden")
             list_view.display = False
@@ -177,17 +184,21 @@ class ProjectPicker(Screen[None]):
     @on(Button.Pressed, "#btn-browse")
     def action_browse(self) -> None:
         """Opens the advanced filesystem browser modal."""
-        self.app.push_screen(AdvancedBrowseModal(), callback=self._handle_project_selection)
+        self.app.push_screen(
+            AdvancedBrowseModal(), callback=self._handle_project_selection
+        )
 
     @on(Button.Pressed, "#btn-create")
     def action_create(self) -> None:
         """Opens the project creation modal."""
         from nexus.screens.create_project import CreateProject
         from nexus.app import NexusApp
-        
+
         if isinstance(self.app, NexusApp):
             root = self.app.container.config_manager.get_project_root()
-            self.app.push_screen(CreateProject(root), callback=self._handle_project_selection)
+            self.app.push_screen(
+                CreateProject(root), callback=self._handle_project_selection
+            )
 
     def _handle_project_selection(self, path: Path | str | None) -> None:
         """Processes the final project selection and launches the tool.
@@ -200,11 +211,12 @@ class ProjectPicker(Screen[None]):
 
         final_path = Path(path)
         from nexus.container import get_container
+
         get_container().state_manager.add_recent(str(final_path))
-        
+
         # Pop back to tool selector and execute
         from nexus.screens.tool_selector import ToolSelector
-        
+
         # We need to find the ToolSelector in the stack
         for stack_screen in self.app.screen_stack:
             if isinstance(stack_screen, ToolSelector):

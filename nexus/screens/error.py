@@ -26,7 +26,6 @@ class ErrorScreen(ModalScreen[None]):
         Binding("escape,enter,space", "dismiss", "Close"),
     ]
 
-
     def __init__(
         self,
         title: str,
@@ -56,7 +55,7 @@ class ErrorScreen(ModalScreen[None]):
         yield Header()
         with Container(classes="modal-dialog"):
             yield Label(f"Error: {self.error_title}", classes="modal-title")
-            
+
             with Vertical(id="error-body"):
                 yield Label(self.error_message, id="error-message")
                 if self.error_details:

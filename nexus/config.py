@@ -16,7 +16,9 @@ from nexus.models import Tool
 # Configuration paths in priority order (lowest to highest).
 CWD_NEXUS_CONFIG = Path.cwd() / "nexus" / "tools.local.toml"
 CWD_CONFIG = Path.cwd() / "tools.local.toml"
-USER_CONFIG_PATH = Path(platformdirs.user_config_dir("nexus", roaming=True)) / "tools.toml"
+USER_CONFIG_PATH = (
+    Path(platformdirs.user_config_dir("nexus", roaming=True)) / "tools.toml"
+)
 LOCAL_CONFIG_PATH = Path(__file__).parent / "tools.local.toml"
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "tools.toml"
 
@@ -53,10 +55,10 @@ class ConfigManager:
         # Use a dict for tools to allow overrides by label
         merged_tools: dict[str, dict[str, Any]] = {}
         merged_data: dict[str, Any] = {
-            "project_root": None, 
+            "project_root": None,
             "keybindings": {},
             "light_theme": "tokyo-night-light",
-            "dark_theme": "tokyo-night-dark"
+            "dark_theme": "tokyo-night-dark",
         }
 
         def merge_from_file(path: Path) -> None:
@@ -72,20 +74,24 @@ class ConfigManager:
 
                         if "project_root" in data and data["project_root"]:
                             merged_data["project_root"] = data["project_root"]
-                            
+
                         if "light_theme" in data:
                             merged_data["light_theme"] = data["light_theme"]
-                        
+
                         if "dark_theme" in data:
                             merged_data["dark_theme"] = data["dark_theme"]
 
-                        if "keybindings" in data and isinstance(data["keybindings"], dict):
+                        if "keybindings" in data and isinstance(
+                            data["keybindings"], dict
+                        ):
                             merged_data["keybindings"].update(data["keybindings"])
 
                 except (tomllib.TOMLDecodeError, PermissionError) as e:
                     self.config_errors.append(f"Error in {path.name}: {e}")
                 except Exception as e:
-                    self.config_errors.append(f"Unexpected error reading {path.name}: {e}")
+                    self.config_errors.append(
+                        f"Unexpected error reading {path.name}: {e}"
+                    )
 
         for path in CONFIG_PATHS:
             merge_from_file(path)
@@ -161,7 +167,7 @@ class ConfigManager:
         config = self._load_config_data()
         return (
             config.get("light_theme", "tokyo-night-light"),
-            config.get("dark_theme", "tokyo-night-dark")
+            config.get("dark_theme", "tokyo-night-dark"),
         )
 
 
@@ -172,7 +178,7 @@ USE_NERD_FONTS = True
 def get_preferred_terminal() -> str | None:
     """Identifies the available terminal emulator based on priority.
 
-    Consults the pyproject.toml configuration and falls back to a 
+    Consults the pyproject.toml configuration and falls back to a
     standard priority list to find a supported terminal executable.
 
     Returns:

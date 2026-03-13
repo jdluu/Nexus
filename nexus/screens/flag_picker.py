@@ -1,6 +1,6 @@
 """Screen for entering custom command line flags.
 
-Provides a modal interface for users to enter additional arguments 
+Provides a modal interface for users to enter additional arguments
 before launching a tool.
 """
 
@@ -41,9 +41,12 @@ class FlagPicker(ModalScreen[str | None]):
         yield Header()
         with Container(classes="modal-dialog"):
             yield Label(f"Flags for {self.tool_label}", classes="modal-title")
-            yield Label("Enter additional command-line arguments (optional):", classes="flag-help")
+            yield Label(
+                "Enter additional command-line arguments (optional):",
+                classes="flag-help",
+            )
             yield Input(placeholder="e.g. --verbose -f config.yaml", id="flag-input")
-            
+
             with Horizontal(classes="modal-footer-actions"):
                 yield Button("Skip", variant="default", id="btn-skip")
                 yield Button("Launch", variant="primary", id="btn-submit")

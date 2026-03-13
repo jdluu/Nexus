@@ -28,7 +28,7 @@ class ToolSelector(Screen[None]):
     # Reactive search query
     search_query = reactive("")
 
-    # Screen-specific bindings. 
+    # Screen-specific bindings.
     # Global bindings (Quit, Theme, Help, Palette) are handled by NexusApp with priority=True.
     BINDINGS = [
         Binding("enter", "launch", "Launch", show=True),
@@ -52,7 +52,9 @@ class ToolSelector(Screen[None]):
         """Composes the screen layout."""
         yield Header()
         yield Input(placeholder="Search tools...", id="tool-search")
-        yield ToolBrowser(id="tool-browser").data_bind(search_query=ToolSelector.search_query)
+        yield ToolBrowser(id="tool-browser").data_bind(
+            search_query=ToolSelector.search_query
+        )
         yield Label("", id="tool-description")
         yield Footer()
 
@@ -60,9 +62,10 @@ class ToolSelector(Screen[None]):
         """Called when the screen is mounted."""
         # Report any config errors from loading phase
         from nexus.container import get_container
+
         for error in get_container().config_manager.config_errors:
             self.app.notify(error, title="Config Error", severity="error", timeout=5.0)
-        
+
         self.query_one("#tool-search").focus()
 
     # --- Actions ---
@@ -142,25 +145,27 @@ class ToolSelector(Screen[None]):
         """Manages the workflow for initiating a tool execution."""
         if tool.requires_project:
             from nexus.screens.project_picker import ProjectPicker
+
             self.app.push_screen(ProjectPicker(tool))
         elif tool.supports_flags:
             from nexus.screens.flag_picker import FlagPicker
+
             self.app.push_screen(
-                FlagPicker(tool.label), 
-                callback=lambda f: self.execute_tool_command(tool, flags=f) if f is not None else None
+                FlagPicker(tool.label),
+                callback=lambda f: (
+                    self.execute_tool_command(tool, flags=f) if f is not None else None
+                ),
             )
         else:
             self.execute_tool_command(tool)
 
     def execute_tool_command(
-        self, 
-        tool: Tool, 
-        project_path: Path | None = None, 
-        flags: str | None = None
+        self, tool: Tool, project_path: Path | None = None, flags: str | None = None
     ) -> None:
         """Executes the tool command within a suspended TUI context."""
         with self.app.suspend():
             from nexus.container import get_container
+
             success = get_container().executor.launch_tool(
                 tool.command, project_path=project_path, flags=flags
             )

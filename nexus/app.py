@@ -68,9 +68,11 @@ class NexusApp(App[None]):
         container: The dependency injection container for application services.
     """
 
-    COMMANDS: ClassVar[set[type[Provider] | Callable[[], type[Provider]]]] = {ToolCommandProvider}
+    COMMANDS: ClassVar[set[type[Provider] | Callable[[], type[Provider]]]] = {
+        ToolCommandProvider
+    }
     CSS_PATH = ["styles/main.tcss"]
-    
+
     # Global bindings that should ALWAYS be visible.
     # We use F1 for Help to avoid Ctrl+H conflict with Backspace in some terminals.
     # We rely on Textual's default Ctrl+P for the Palette (visible on the right).
@@ -87,7 +89,7 @@ class NexusApp(App[None]):
     def on_mount(self) -> None:
         """Called when the application is mounted.
 
-        Initializes application services, applies user keybindings, and 
+        Initializes application services, applies user keybindings, and
         activates the initial tool selection screen.
         """
         # Register custom themes
@@ -111,12 +113,12 @@ class NexusApp(App[None]):
     def _apply_bindings(self) -> None:
         """Applies configurable keybindings from the user settings."""
         bindings = self.container.config_manager.get_keybindings()
-        
+
         # Map user-defined keys but hide them from the footer to avoid duplication
         # with our prioritized Ctrl-key bindings.
         if "quit" in bindings:
             self.bind(keys=bindings["quit"], action="request_quit", show=False)
-        
+
         if "theme" in bindings:
             self.bind(keys=bindings["theme"], action="theme", show=False)
 
@@ -144,7 +146,7 @@ class NexusApp(App[None]):
                         ["defaults", "read", "-g", "AppleInterfaceStyle"],
                         capture_output=True,
                         text=True,
-                        check=False
+                        check=False,
                     )
                     return "Dark" in result.stdout
                 except Exception:
@@ -158,7 +160,7 @@ class NexusApp(App[None]):
                 ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
             return "prefer-dark" in result.stdout
         except Exception:
@@ -185,27 +187,33 @@ class NexusApp(App[None]):
         def apply_theme(new_theme: str | None) -> None:
             if new_theme:
                 self.theme = new_theme
-                name = new_theme.replace("tokyo-night-", "").replace("textual-", "").title()
+                name = (
+                    new_theme.replace("tokyo-night-", "")
+                    .replace("textual-", "")
+                    .title()
+                )
                 self.app.notify(f"Applied theme: {name}")
 
         from nexus.screens.theme_picker import ThemePicker
+
         self.push_screen(ThemePicker(available_themes, self.theme, apply_theme))
 
     def action_help(self) -> None:
         """Opens the help screen modal."""
         from nexus.screens.help import HelpScreen
+
         self.push_screen(HelpScreen())
 
     async def action_back(self) -> None:
         """Navigates back to the previous screen.
 
-        Removes the current screen from the stack if more than one screen 
+        Removes the current screen from the stack if more than one screen
         is present, and ensures the home screen is not popped.
         """
         # If we are on the main screen, 'back' shouldn't do anything
         if isinstance(self.screen, ToolSelector):
             return
-            
+
         if len(self.screen_stack) > 2:
             self.pop_screen()
 

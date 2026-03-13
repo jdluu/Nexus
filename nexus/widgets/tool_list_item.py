@@ -1,6 +1,6 @@
 """Custom list items for the Nexus TUI.
 
-Defines specialized ListItem widgets for displaying tool categories with 
+Defines specialized ListItem widgets for displaying tool categories with
 consistent formatting and visual indicators.
 """
 
@@ -52,5 +52,5 @@ class CategoryListItem(ListItem):
             text = f"{icon}ALL"
         else:
             text = f"[◼] {icon}{self.category_id}"
-            
+
         yield Label(text)

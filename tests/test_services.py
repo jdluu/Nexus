@@ -65,23 +65,30 @@ def test_launch_tool_with_flags_and_placeholders() -> None:
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
         project_path = Path("/my/project")
-        
+
         # Test replace both
         executor.launch_tool("nvim {flags} {project}", project_path, "--clean")
-        mock_run.assert_called_with(["nvim", "--clean", "/my/project"], cwd=None, check=False)
-        
+        mock_run.assert_called_with(
+            ["nvim", "--clean", "/my/project"], cwd=None, check=False
+        )
+
         # Test flags appending
         executor.launch_tool("ls", None, "-la")
         mock_run.assert_called_with(["ls", "-la"], cwd=None, check=False)
 
+
 def test_launch_tool_empty_command() -> None:
     assert executor.launch_tool("") is False
+
 
 def test_launch_tool_shlex_value_error() -> None:
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
         executor.launch_tool('echo "unclosed quote')
-        mock_run.assert_called_with(["echo", '"unclosed', "quote"], cwd=None, check=False)
+        mock_run.assert_called_with(
+            ["echo", '"unclosed', "quote"], cwd=None, check=False
+        )
+
 
 def test_launch_tool_file_not_found() -> None:
     with patch("subprocess.run", side_effect=FileNotFoundError):

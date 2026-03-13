@@ -1,6 +1,6 @@
 """Command palette providers for Nexus.
 
-Extends the Textual command palette with Nexus specific commands such as 
+Extends the Textual command palette with Nexus specific commands such as
 tool launching and navigation.
 """
 
@@ -13,7 +13,7 @@ from nexus.models import Tool
 class ToolCommandProvider(Provider):
     """A command provider for Nexus tools.
 
-    Allows users to search for and launch any configured tool directly from 
+    Allows users to search for and launch any configured tool directly from
     the command palette.
     """
 
@@ -24,12 +24,11 @@ class ToolCommandProvider(Provider):
             An async iterator of DiscoveryHit objects.
         """
         from nexus.container import get_container
+
         tools = get_container().config_manager.get_tools()
         for tool in tools:
             yield DiscoveryHit(
-                tool.label,
-                partial(self._launch_tool, tool),
-                help=tool.description
+                tool.label, partial(self._launch_tool, tool), help=tool.description
             )
 
     async def search(self, query: str) -> AsyncIterator[Hit]:
@@ -43,6 +42,7 @@ class ToolCommandProvider(Provider):
         """
         matcher = self.matcher(query)
         from nexus.container import get_container
+
         tools = get_container().config_manager.get_tools()
         for tool in tools:
             # Match against label and description for better results
@@ -52,7 +52,7 @@ class ToolCommandProvider(Provider):
                     score,
                     matcher.highlight(tool.label),
                     partial(self._launch_tool, tool),
-                    help=tool.description
+                    help=tool.description,
                 )
 
     def _launch_tool(self, tool: Tool) -> None:
@@ -64,7 +64,7 @@ class ToolCommandProvider(Provider):
             tool: The Tool configuration to launch.
         """
         from nexus.screens.tool_selector import ToolSelector
-        
+
         # Search for ToolSelector in the screen stack
         # If found, use its flow. If not, push it then launch.
         selector = None
@@ -72,7 +72,7 @@ class ToolCommandProvider(Provider):
             if isinstance(screen, ToolSelector):
                 selector = screen
                 break
-        
+
         if selector:
             selector.launch_tool_flow(tool)
         else:

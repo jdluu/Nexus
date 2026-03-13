@@ -1,6 +1,6 @@
 """Screen for selecting the application theme.
 
-Provides a modal interface to browse available themes with real time 
+Provides a modal interface to browse available themes with real time
 preview functionality using the Textual OptionList widget.
 """
 
@@ -24,7 +24,11 @@ class ThemePicker(ModalScreen[str | None]):
     """
 
     def __init__(
-        self, themes: list[str], current_theme: str, on_preview: Callable[[str], None], **kwargs: Any
+        self,
+        themes: list[str],
+        current_theme: str,
+        on_preview: Callable[[str], None],
+        **kwargs: Any,
     ):
         """Initializes the ThemePicker.
 
@@ -59,7 +63,7 @@ class ThemePicker(ModalScreen[str | None]):
     def on_mount(self) -> None:
         """Populates the list of themes and selects the current theme."""
         option_list = self.query_one("#theme-option-list", OptionList)
-        
+
         for theme in self.themes:
             display_name = theme.replace("theme-", "").title()
             option_list.add_option(Option(display_name, id=theme))
@@ -69,7 +73,7 @@ class ThemePicker(ModalScreen[str | None]):
             option_list.highlighted = current_index
         except ValueError:
             option_list.highlighted = 0
-            
+
         option_list.focus()
 
     @on(OptionList.OptionHighlighted)

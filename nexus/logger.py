@@ -1,6 +1,6 @@
 """Logging configuration for the Nexus application.
 
-Configures structural logging to write asynchronous records to a rotating 
+Configures structural logging to write asynchronous records to a rotating
 file in the user's cache directory.
 """
 
@@ -18,7 +18,7 @@ LOG_FILE = LOG_DIR / "nexus.log"
 def configure_logging() -> None:
     """Configures structured logging for the application.
 
-    Creates the necessary log directory and initializes the structlog 
+    Creates the necessary log directory and initializes the structlog
     processors for JSON output to the log file.
     """
     try:

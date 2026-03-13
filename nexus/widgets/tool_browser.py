@@ -1,6 +1,6 @@
 """Widget for browsing tools by category.
 
-Encapsulates the dual-pane layout containing the category list and 
+Encapsulates the dual-pane layout containing the category list and
 the filtered tool list using Textual's OptionList for performance.
 """
 
@@ -33,6 +33,7 @@ class ToolBrowser(Widget):
         Attributes:
             tool: The Tool model representing the selection.
         """
+
         def __init__(self, tool: Tool) -> None:
             """Initializes the ToolSelected message.
 
@@ -48,6 +49,7 @@ class ToolBrowser(Widget):
         Attributes:
             tool: The Tool model representing the highlight.
         """
+
         def __init__(self, tool: Tool) -> None:
             """Initializes the ToolHighlighted message.
 
@@ -75,7 +77,7 @@ class ToolBrowser(Widget):
             with Horizontal(classes="pane-header-container"):
                 yield Label("Toolbox", classes="pane-header")
                 yield Label("Tip: F1 for controls", classes="pane-header-right")
-            
+
             yield OptionList(id="tool-list")
             yield Label(
                 "No tools found", id="tools-empty", classes="empty-state hidden"
@@ -89,11 +91,11 @@ class ToolBrowser(Widget):
     def _initial_populate(self) -> None:
         """Performs the first data load and sets initial category."""
         self.populate_categories()
-        
+
         category_list = self.query_one("#category-list", ListView)
         if len(category_list.children) > 0:
             category_list.index = 0
-        
+
         self.populate_tools("ALL")
 
     def watch_search_query(self, new_value: str) -> None:
@@ -107,7 +109,7 @@ class ToolBrowser(Widget):
         if new_value:
             self.selected_category = "ALL"
             self.select_all_category()
-        
+
         self.populate_tools(self.selected_category, filter_text=new_value)
 
     def watch_selected_category(self, new_value: str) -> None:
@@ -151,7 +153,7 @@ class ToolBrowser(Widget):
             return
 
         option_list.loading = True
-        
+
         # Fetch tools from container
         tools = get_container().config_manager.get_tools()
 
@@ -169,19 +171,19 @@ class ToolBrowser(Widget):
             ]
 
         self._filtered_tools = filtered_tools
-        
+
         try:
             empty_lbl = self.query_one("#tools-empty", Label)
             option_list.clear_options()
-            
+
             if filtered_tools:
                 option_list.display = True
                 empty_lbl.add_class("hidden")
-                
+
                 for tool in filtered_tools:
                     label = f"> [bold]{tool.label}[/] | [dim]{tool.description}[/]"
                     option_list.add_option(Option(label, id=tool.command))
-                
+
                 option_list.highlighted = 0
             else:
                 option_list.display = False
@@ -206,15 +208,21 @@ class ToolBrowser(Widget):
         if event.list_view.id == "category-list":
             self.query_one("#tool-list").focus()
 
-    def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+    def on_option_list_option_highlighted(
+        self, event: OptionList.OptionHighlighted
+    ) -> None:
         """Handles highlight events for the tool list."""
-        if event.option_index is not None and 0 <= event.option_index < len(self._filtered_tools):
+        if event.option_index is not None and 0 <= event.option_index < len(
+            self._filtered_tools
+        ):
             tool = self._filtered_tools[event.option_index]
             self.post_message(self.ToolHighlighted(tool))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         """Handles selection events for the tool list."""
-        if event.option_index is not None and 0 <= event.option_index < len(self._filtered_tools):
+        if event.option_index is not None and 0 <= event.option_index < len(
+            self._filtered_tools
+        ):
             tool = self._filtered_tools[event.option_index]
             self.post_message(self.ToolSelected(tool))
 
@@ -225,7 +233,9 @@ class ToolBrowser(Widget):
         elif self.query_one("#tool-list").has_focus:
             option_list = self.query_one("#tool-list", OptionList)
             if option_list.highlighted is not None:
-                option_list.highlighted = min(len(self._filtered_tools) - 1, option_list.highlighted + 1)
+                option_list.highlighted = min(
+                    len(self._filtered_tools) - 1, option_list.highlighted + 1
+                )
             else:
                 option_list.highlighted = 0
 
@@ -253,7 +263,7 @@ class ToolBrowser(Widget):
     def focus_right(self) -> None:
         """Transfers focus from the category list to the tool list."""
         if self.query_one("#category-list").has_focus:
-             self.query_one("#tool-list").focus()
+            self.query_one("#tool-list").focus()
 
     def focus_left(self) -> None:
         """Transfers focus from the tool list to the category list."""
@@ -269,6 +279,8 @@ class ToolBrowser(Widget):
     def get_current_selection(self) -> Tool | None:
         """Retrieves the currently selected tool in the tool list."""
         option_list = self.query_one("#tool-list", OptionList)
-        if option_list.highlighted is not None and 0 <= option_list.highlighted < len(self._filtered_tools):
+        if option_list.highlighted is not None and 0 <= option_list.highlighted < len(
+            self._filtered_tools
+        ):
             return self._filtered_tools[option_list.highlighted]
         return None

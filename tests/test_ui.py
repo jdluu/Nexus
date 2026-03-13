@@ -15,7 +15,7 @@ from nexus.screens.tool_selector import ToolSelector
 async def test_app_startup_and_help() -> None:
     """Verifies that the application starts and the help screen is accessible.
 
-    Asserts that the initial screen is the ToolSelector and that the help 
+    Asserts that the initial screen is the ToolSelector and that the help
     modal can be toggled via keyboard input.
     """
     app = NexusApp()
@@ -23,7 +23,7 @@ async def test_app_startup_and_help() -> None:
         assert isinstance(app.screen, ToolSelector)
 
         # Unfocus input to let global bindings work or press tab
-        await pilot.press("tab") 
+        await pilot.press("tab")
         await pilot.pause()
 
         # Press '?' for help (standard global binding)
@@ -39,7 +39,7 @@ async def test_app_startup_and_help() -> None:
 async def test_navigation() -> None:
     """Verifies keyboard navigation within the tool selector.
 
-    Asserts that focus transitions correctly between categories and tool 
+    Asserts that focus transitions correctly between categories and tool
     lists and that selection indices are updated.
     """
     app = NexusApp()
@@ -67,9 +67,10 @@ async def test_navigation() -> None:
         await pilot.press("right")
         await pilot.pause()
         from textual.widgets import OptionList
+
         tool_list = screen.query_one("#tool-list", OptionList)
-        
-        # In some cases 'right' might not be enough if bubble is intercepted, 
+
+        # In some cases 'right' might not be enough if bubble is intercepted,
         # let's try to focus it directly to verify it exists and is focusable.
         tool_list.focus()
         await pilot.pause()
@@ -80,7 +81,7 @@ async def test_navigation() -> None:
 async def test_numeric_launch() -> None:
     """Verifies that numeric keys correctly initiate tool launching.
 
-    Asserts that pressing numeric keys triggers the tool launch flow 
+    Asserts that pressing numeric keys triggers the tool launch flow
     for the corresponding item in the list.
     """
     app = NexusApp()
@@ -88,11 +89,13 @@ async def test_numeric_launch() -> None:
         # Ensure search is empty and tab away
         await pilot.press("escape", "tab")
         await pilot.pause()
-        
-        with patch("nexus.screens.tool_selector.ToolSelector.launch_tool_flow") as mock_launch:
+
+        with patch(
+            "nexus.screens.tool_selector.ToolSelector.launch_tool_flow"
+        ) as mock_launch:
             await pilot.press("1")
             mock_launch.assert_called_once()
-            
+
             await pilot.press("2")
             assert mock_launch.call_count == 2
 
@@ -101,7 +104,7 @@ async def test_numeric_launch() -> None:
 async def test_flag_picker_flow() -> None:
     """Verifies the flag picker workflow.
 
-    Asserts that the FlagPicker modal appears for supported tools and 
+    Asserts that the FlagPicker modal appears for supported tools and
     that input is correctly passed to the executor.
     """
     from nexus.screens.flag_picker import FlagPicker
@@ -114,14 +117,15 @@ async def test_flag_picker_flow() -> None:
         description="Testing flags",
         command="echo {flags}",
         requires_project=False,
-        supports_flags=True
+        supports_flags=True,
     )
 
     async with app.run_test() as pilot:
         # Mock suspend and launch_tool to avoid headless environment errors
-        with patch.object(app, "suspend"), \
-             patch("nexus.services.executor.launch_tool") as mock_launch:
-            
+        with (
+            patch.object(app, "suspend"),
+            patch("nexus.services.executor.launch_tool") as mock_launch,
+        ):
             # Manually trigger flow for a tool with flags
             screen = app.screen
             assert isinstance(screen, ToolSelector)
@@ -136,7 +140,9 @@ async def test_flag_picker_flow() -> None:
             await pilot.pause()
 
             # Verify executor was called with flags
-            mock_launch.assert_called_once_with("echo {flags}", project_path=None, flags="-v --dry-run")
+            mock_launch.assert_called_once_with(
+                "echo {flags}", project_path=None, flags="-v --dry-run"
+            )
 
             # The screen should have popped back to ToolSelector
             assert isinstance(app.screen, ToolSelector)
@@ -162,7 +168,7 @@ async def test_theme_picker_flow() -> None:
 
         # Select a different theme (e.g., Storm)
         option_list = app.screen.query_one("#theme-option-list", OptionList)
-        
+
         # Dynamically find the index for tokyo-night-storm
         # The themes are sorted alphabetically in ToolSelector
         available_themes = sorted(list(app.available_themes))
@@ -170,7 +176,7 @@ async def test_theme_picker_flow() -> None:
             storm_index = available_themes.index("tokyo-night-storm")
         except ValueError:
             storm_index = 0
-            
+
         option_list.highlighted = storm_index
         await pilot.pause(0.2)
 

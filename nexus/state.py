@@ -33,7 +33,7 @@ class StateManager:
     def _load(self) -> None:
         """Loads application state from the persistent storage file.
 
-        Handles IO errors by logging the failure and maintaining the 
+        Handles IO errors by logging the failure and maintaining the
         default state.
         """
         if STATE_FILE.exists():
@@ -46,7 +46,7 @@ class StateManager:
     def _save(self) -> None:
         """Persists the current application state to disk atomically.
 
-        Ensures the parent directory exists and performs an atomic write 
+        Ensures the parent directory exists and performs an atomic write
         using a temporary file.
         """
         try:
@@ -54,7 +54,7 @@ class StateManager:
             tmp_file = STATE_FILE.with_suffix(".tmp")
             with open(tmp_file, "w") as f:
                 json.dump(self._state, f, indent=2)
-            
+
             tmp_file.replace(STATE_FILE)
         except Exception as e:
             log.error("save_state_failed", error=str(e))
@@ -63,7 +63,7 @@ class StateManager:
         """Retrieves the list of recent project paths.
 
         Returns:
-            A list of strings representing the absolute paths of 
+            A list of strings representing the absolute paths of
             recently accessed projects.
         """
         return cast(list[str], self._state.get("recents", []))

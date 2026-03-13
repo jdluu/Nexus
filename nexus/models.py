@@ -41,4 +41,3 @@ class Project(BaseModel):
     name: str
     path: Path
     is_git: bool
-
