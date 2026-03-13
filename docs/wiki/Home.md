@@ -1,11 +1,11 @@
 # Nexus Wiki
 
-Welcome to the Nexus documentation. Nexus is a TUI orchestrator designed to centralize your terminal utilities, helping you remember and launch your installed tools without having to memorize every individual command.
+Welcome to the Nexus documentation. Nexus is a TUI terminal dashboard and tool orchestrator designed to centralize your terminal utilities, enabling you to launch any tool without memorizing individual commands or deep directory structures.
 
 ## Installation
 
 ```bash
-# Always latest stable
+# Install globally using uv (recommended)
 uv tool install nexus-tui
 ```
 
@@ -18,13 +18,14 @@ uv tool upgrade nexus-tui
 
 ## Core Features
 
-*   **Fuzzy Search**: Quickly locate projects using approximate matching.
-*   **Persistent State**: Your most recent projects and favorite tools are automatically saved.
-*   **Custom Keybindings**: Configure the interface to match your personal workflow.
-*   **Theming**: Choose between various modern color schemes (Light, Dark, and Storm).
+*   **Smart Search**: Instantly find tools with fuzzy matching and a global **Command Palette** (`Ctrl+P`).
+*   **Dynamic Flags**: Pass custom arguments (e.g., `--verbose`, `--dry-run`) to your tools at launch time.
+*   **Advanced Project Browser**: Browse your entire filesystem to find the perfect context for your tools. Supports both folders and specific files.
+*   **Responsive Theming**: Beautiful built-in themes (Tokyo Night Dark, Storm, Light) with automatic system preference detection.
+*   **Persistent State**: Nexus remembers your recently accessed projects for quick re-launching.
+*   **Custom Keybindings**: Full control over the interface shortcuts to align with your personal workflow.
 
-## Project Navigation
+## Documentation Structure
 
-1.  **Home Page**: Overview of all work phases and core features.
-2.  **Configuration Guide**: Details on setting up `tools.toml`.
-3.  **Platform Compatibility**: Specific instructions for Windows, MacOS, and Linux.
+1.  **[Configuration Guide](Configuration)**: Detailed instructions for setting up `tools.toml` and defining your tools.
+2.  **Platform Compatibility**: Operating system specific setup details.

@@ -4,7 +4,7 @@ Nexus is a terminal dashboard that lets you launch your favorite CLI and TUI too
 
 Think of Nexus as a launcher for terminal tools, similar to how Raycast or Alfred launch GUI apps.
 
-**Source Code**: https://github.com/jdluu/Nexus
+**Source Code**: https://github.com/jdluu/Nexus | **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 
 ![Nexus Logic Demo](https://raw.githubusercontent.com/jdluu/Nexus/main/docs/nexus_demo.png)
 *Caption: Main dashboard showing projects and tools.*
@@ -38,111 +38,52 @@ To update to the latest version:
 uv tool upgrade nexus-tui
 ```
 
-### Local Development
+## Features
 
-For contributors who want to modify the source code:
-
-```bash
-git clone https://github.com/jdluu/Nexus
-cd Nexus
-uv tool install --editable .
-```
-
-## Cross Platform Support
-
-Nexus supports Linux, MacOS, and Windows.
-
-*   **Linux**: Fully supported on standard terminals.
-*   **MacOS**: Fully supported.
-*   **Windows**: Recommended to use PowerShell 7 or Git Bash within Windows Terminal.
-
-*Note: Some tools you launch may behave differently depending on your shell and operating system.*
+*   **Smart Search**: Instantly find tools with fuzzy matching and a built-in **Command Palette** (`Ctrl+P`).
+*   **Dynamic Flags**: Pass custom arguments (e.g., `--verbose`, `--dry-run`) to your tools at launch time.
+*   **Advanced Project Browser**: Browse your entire filesystem or scan defined roots to find project context. Supports selecting both folders and individual files.
+*   **Responsive Design System**: Fully themeable interface with support for Tokyo Night (Dark, Storm, Light) and automatic system preference detection.
+*   **Secure Secrets**: Seamless integration with **Infisical** for environment variable management.
+*   **Persistence**: Nexus remembers your recently accessed projects for quick re-launching.
 
 ## Configuration
 
-Nexus utilizes standard configuration paths. You can find your config file at the location listed in the **First Run** section above.
+Nexus utilizes a `tools.toml` file for configuration.
 
 ### Minimal Starter Config
-
-Copy this into your `tools.toml` to get started immediately:
 
 ```toml
 # Define where your code projects live
 project_root = "~/Projects"
 
-# Add a simple tool to open a shell in the selected project
+# Add a tool with placeholder support
 [[tool]]
-label = "Shell"
-category = "UTIL"
-description = "Open a shell in the project"
-command = "$SHELL"
-requires_project = true
-```
-
-### Understanding "Projects"
-
-A **Project** is any directory found inside your `project_root`. Nexus scans this folder and lets you select a specific project before launching a tool.
-
-For example, if you select the "Shell" tool above, Nexus will ask you to pick a project (e.g., `~/Projects/MyApp`). It then launches `$SHELL` inside that directory.
-
-### Tool Definitions
-
-Tools are defined using the `[[tool]]` table.
-
-```toml
-[[tool]]
-label = "Neovim"
+label = "Edit"
 category = "DEV"
-description = "Text editor"
-command = "nvim"
+description = "Open project in Neovim"
+command = "nvim {project}"
 requires_project = true
+supports_flags = true
 ```
 
-*   **label**: The display name.
-*   **category**: The grouping identifier (e.g., DEV, UTIL).
-*   **description**: A short explanation of the function.
-*   **command**: The executable command line instruction.
-*   **requires_project**: If `true`, Nexus prompts for a project before running. If `false`, it runs immediately in the current directory.
+### Command Placeholders
 
-### Keybindings
+You can use the following placeholders in your `command` strings:
+- `{project}`: Replaced by the absolute path of the selected project or file.
+- `{flags}`: Replaced by any custom arguments you enter at launch.
 
-Nexus comes with default keybindings (see **Controls** below). You can override them in the `[keybindings]` section of your config.
-
-```toml
-[keybindings]
-# Override default quit to Alt+Q
-quit = "alt+q"
-# Override favorite toggle
-toggle_favorite = "ctrl+f"
-```
-
-## First Run Experience
-
-1.  Run `nexus` from your terminal.
-2.  Nexus creates a default configuration file at:
-    *   **Linux**: `~/.config/nexus/tools.toml`
-    *   **MacOS**: `~/Library/Application Support/Nexus/tools.toml`
-    *   **Windows**: `%LOCALAPPDATA%\Nexus\tools.toml`
-3.  On first launch, you will see an empty dashboard.
-4.  Edit the configuration file (see below) to add your tools and project roots.
-5.  Restart Nexus to see your changes.
-
-### Features
-
-*   **Smart Search**: Instantly find what you need with fuzzy matching, so you don't have to remember exact names.
-*   **Persistence**: Nexus remembers your recent projects and favorite tools, so common workflows are always one keystroke away.
-*   **Favorites**: Pin your most-used tools to the top of the list for quick access.
-
-### Controls
+## Controls
 
 *   **Arrow Keys**: Navigate through lists.
 *   **Enter**: Confirm selection or launch tool.
-*   **Ctrl+F**: Toggle the favorite status of a tool.
-*   **TypeAnywhere**: Instantly filter lists by typing in the search bar.
-*   **Esc**: Reset the search filter.
-*   **Ctrl+B**: Go back (on picker screens).
-*   **Ctrl+C**: Exit the application.
-*   **Ctrl+H**: Show Help / Controls.
+*   **Ctrl+P**: Open the global **Command Palette**.
+*   **Ctrl+B**: Open the **Advanced Project Browser** (when in project picker).
+*   **Ctrl+T**: Open the **Theme Picker**.
+*   **TypeAnywhere**: Instantly filter tools by typing.
+*   **Esc**: Go back or return to the previous view.
+*   **Ctrl+Q**: Exit the application (with confirmation).
+*   **F1**: Show Help / Controls.
 
 ## FAQ & Troubleshooting
 
@@ -150,16 +91,10 @@ toggle_favorite = "ctrl+f"
 No. You must define your tools in `tools.toml` so you have full control over what appears in your dashboard.
 
 ### Is this a replacement for my shell?
-No. Nexus is a dashboard. When you launch a tool, it temporarily suspends itself to let the tool take over your terminal found. When the tool exits, Nexus returns.
+No. Nexus is a dashboard. When you launch a tool, it temporarily suspends itself to let the tool take over your terminal. When the tool exits, Nexus returns.
 
 ### My icons look broken (rectangles or question marks).
-This usually means you aren't using a **Nerd Font**.
-1.  Download a font from [Nerd Fonts](https://www.nerdfonts.com/).
-2.  Install it on your system.
-3.  Configure your terminal emulator to use that font.
-
-### I see a blank screen on launch.
-Check that your `tools.toml` file exists and has at least one valid `[[tool]]` entry. See the **Configuration** section for a minimal example.
+Ensure you are using a [Nerd Font](https://www.nerdfonts.com/) and that your terminal emulator is configured to use it.
 
 ## Development (For Contributors)
 
