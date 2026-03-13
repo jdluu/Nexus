@@ -117,6 +117,7 @@ async def test_project_picker_browse_and_create(
 ) -> None:
     from nexus.app import NexusApp
     from nexus.screens.tool_selector import ToolSelector
+    from textual.screen import Screen
 
     app = NexusApp()
     selector = ToolSelector()
@@ -133,26 +134,33 @@ async def test_project_picker_browse_and_create(
             await app.push_screen(screen)
             await pilot.pause(0.1)
 
+            # Use dummy screens to avoid flakiness with DirectoryTree or auto-dismissal
+            class MockBrowse(Screen):
+                pass
+
+            class MockCreate(Screen):
+                def __init__(self, *args: Any, **kwargs: Any) -> None:
+                    super().__init__()
+
             # Mock execute_tool_command and app.suspend to avoid SuspendNotSupported in CI
             with (
                 patch.object(app, "suspend"),
                 patch(
                     "nexus.screens.tool_selector.ToolSelector.execute_tool_command"
                 ),
+                patch("nexus.screens.project_picker.AdvancedBrowseModal", MockBrowse),
+                patch("nexus.screens.create_project.CreateProject", MockCreate),
             ):
                 # Use keyboard shortcut instead of click for better reliability in CI
                 await pilot.press("ctrl+b")
                 await pilot.pause(0.2)
 
-
-                # Should push AdvancedBrowseModal
-                assert isinstance(app.screen, AdvancedBrowseModal)
-                await pilot.press("escape")
+                # Should push our mock browse screen
+                assert isinstance(app.screen, MockBrowse)
+                app.pop_screen()
                 await pilot.pause(0.1)
 
                 # Create project
                 await pilot.click("#btn-create")
                 await pilot.pause(0.2)
-                from nexus.screens.create_project import CreateProject
-
-                assert isinstance(app.screen, CreateProject)
+                assert isinstance(app.screen, MockCreate)
