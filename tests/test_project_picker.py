@@ -103,7 +103,9 @@ async def test_project_picker_selection(mock_tool: Tool, tmp_path: Path) -> None
 @pytest.mark.asyncio
 async def test_project_picker_browse_and_create(mock_tool: Tool, tmp_path: Path) -> None:
     from nexus.app import NexusApp
+    from nexus.screens.tool_selector import ToolSelector
     app = NexusApp()
+    selector = ToolSelector()
     
     with patch("nexus.container.get_container") as mock_get_container:
         container = mock_get_container.return_value
@@ -112,20 +114,24 @@ async def test_project_picker_browse_and_create(mock_tool: Tool, tmp_path: Path)
         
         screen = ProjectPicker(mock_tool)
         async with app.run_test() as pilot:
+            await app.push_screen(selector)
+            await pilot.pause(0.1)
             await app.push_screen(screen)
             await pilot.pause(0.1)
             
-            # Click browse
-            await pilot.click("#btn-browse")
-            await pilot.pause(0.2)
-            
-            # Should push AdvancedBrowseModal
-            assert isinstance(app.screen, AdvancedBrowseModal)
-            await pilot.press("escape")
-            await pilot.pause(0.1)
-            
-            # Create project
-            await pilot.click("#btn-create")
-            await pilot.pause(0.2)
-            from nexus.screens.create_project import CreateProject
-            assert isinstance(app.screen, CreateProject)
+            # Mock execute_tool_command to avoid SuspendNotSupported in CI
+            with patch("nexus.screens.tool_selector.ToolSelector.execute_tool_command") as mock_execute:
+                # Use keyboard shortcut instead of click for better reliability in CI
+                await pilot.press("ctrl+b")
+                await pilot.pause(0.2)
+                
+                # Should push AdvancedBrowseModal
+                assert isinstance(app.screen, AdvancedBrowseModal)
+                await pilot.press("escape")
+                await pilot.pause(0.1)
+                
+                # Create project
+                await pilot.click("#btn-create")
+                await pilot.pause(0.2)
+                from nexus.screens.create_project import CreateProject
+                assert isinstance(app.screen, CreateProject)

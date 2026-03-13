@@ -86,27 +86,14 @@ class ToolBrowser(Widget):
         # Use call_after_refresh to ensure the ListView/OptionList are ready
         self.call_after_refresh(self._initial_populate)
 
-    def _initial_initial_populate(self) -> None:
-        """Performs the first data load."""
-        self.populate_categories()
-        
-        # Set initial focus and category ("ALL" is at index 0)
-        category_list = self.query_one("#category-list", ListView)
-        if len(category_list.children) > 0:
-            category_list.index = 0
-        
-        category_list.focus()
-        self.populate_tools("ALL")
-
     def _initial_populate(self) -> None:
-        """Wrapper for initial population to handle mounting state."""
+        """Performs the first data load and sets initial category."""
         self.populate_categories()
         
         category_list = self.query_one("#category-list", ListView)
         if len(category_list.children) > 0:
             category_list.index = 0
         
-        category_list.focus()
         self.populate_tools("ALL")
 
     def watch_search_query(self, new_value: str) -> None:

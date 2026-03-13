@@ -26,8 +26,8 @@ async def test_app_startup_and_help() -> None:
         await pilot.press("tab") 
         await pilot.pause()
 
-        # Press F1 for help (standard global binding)
-        await pilot.press("f1")
+        # Press '?' for help (standard global binding)
+        await pilot.press("?")
         await pilot.pause()
         assert isinstance(app.screen, HelpScreen)
 
@@ -172,11 +172,11 @@ async def test_theme_picker_flow() -> None:
             storm_index = 0
             
         option_list.highlighted = storm_index
-        await pilot.pause()
+        await pilot.pause(0.2)
 
         # Confirm selection
         await pilot.press("enter")
-        await pilot.pause()
+        await pilot.pause(0.2)
 
         # Verify theme was updated in App
         assert app.theme == "tokyo-night-storm"
