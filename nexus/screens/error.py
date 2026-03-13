@@ -1,20 +1,31 @@
 """Generic Error Screen for Nexus.
 
-Displays an error message and functionality to dismiss or copy details.
+Displays detailed error information and provides a mechanism to dismiss the view.
 """
 
 from typing import Any
 
+from textual import on
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Static
+from textual.widgets import Button, Label, Static, Header, Footer
 
 
 class ErrorScreen(ModalScreen[None]):
-    """A modal screen that displays an error message."""
+    """A modal screen that displays application errors.
 
-    CSS_PATH = "../style.tcss"
+    Attributes:
+        error_title: The high level error identifier.
+        error_message: A descriptive error message.
+        error_details: Technical details for diagnostic purposes.
+    """
+
+    BINDINGS = [
+        Binding("escape,enter,space", "dismiss", "Close"),
+    ]
+
 
     def __init__(
         self,
@@ -27,9 +38,9 @@ class ErrorScreen(ModalScreen[None]):
 
         Args:
             title: The title of the error.
-            message: The main error message.
-            details: Optional technical details.
-            **kwargs: Additional arguments.
+            message: The main descriptive message.
+            details: Optional technical diagnostic information.
+            **kwargs: Additional keyword arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
         self.error_title = title
@@ -37,21 +48,25 @@ class ErrorScreen(ModalScreen[None]):
         self.error_details = details
 
     def compose(self) -> ComposeResult:
-        """Composes the screen layout."""
-        with Container(id="error-dialog"):
-            with Horizontal(id="error-header"):
-                yield Label("Error", classes="error-icon")
-                yield Label(self.error_title, id="error-title")
+        """Composes the layout of the error dialog.
+
+        Returns:
+            A ComposeResult containing the visual widget tree.
+        """
+        yield Header()
+        with Container(classes="modal-dialog"):
+            yield Label(f"Error: {self.error_title}", classes="modal-title")
             
             with Vertical(id="error-body"):
                 yield Label(self.error_message, id="error-message")
                 if self.error_details:
                     yield Static(self.error_details, id="error-details")
 
-            with Horizontal(id="error-footer"):
+            with Horizontal(classes="modal-footer-actions"):
                 yield Button("Close", variant="error", id="btn-error-close")
+        yield Footer()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handles button presses."""
-        if event.button.id == "btn-error-close":
-            self.dismiss()
+    @on(Button.Pressed, "#btn-error-close")
+    def _on_close(self) -> None:
+        """Handles the close button click."""
+        self.dismiss()

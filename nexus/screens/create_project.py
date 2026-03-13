@@ -1,111 +1,84 @@
-"""Screen for creating a new project.
+"""Screen for creating a new project directory.
 
-Collects user input for a new project directory name and creates the directory.
+Provides a modal interface for users to enter a new project name and
+initialize a directory within the configured project root.
 """
 
-import os
-from typing import Any, Callable
+from pathlib import Path
+from typing import Any
 
-from nexus.config import get_project_root
+from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label
+from textual.widgets import Button, Input, Label, Header, Footer
 
 
-class CreateProject(ModalScreen[None]):
-    """A modal screen for creating a new project.
+class CreateProject(ModalScreen[Path | None]):
+    """A modal screen for creating a new project directory."""
 
-    Attributes:
-        on_created_callback: Callback function called with the new project name upon success.
-    """
-
-    CSS_PATH = "../style.tcss"
-
-    def __init__(self, on_created: Callable[[str], None], **kwargs: Any):
+    def __init__(self, project_root: Path, **kwargs: Any):
         """Initializes the CreateProject screen.
 
         Args:
-            on_created: Callback function (str) -> None.
-            **kwargs: Additional arguments passed to ModalScreen.
+            project_root: The base directory where the project will be created.
+            **kwargs: Additional keyword arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
-        self.on_created_callback = on_created
+        self.project_root = project_root
 
     BINDINGS = [
+        Binding("enter", "submit", "Create"),
         Binding("escape", "cancel", "Cancel"),
     ]
 
     def compose(self) -> ComposeResult:
-        """Composes the screen layout.
+        """Composes the visual layout of the project creation modal.
 
         Returns:
-            A ComposeResult containing the widget tree.
+            A ComposeResult containing the visual widget hierarchy.
         """
-        with Container(id="create-project-dialog"):
-            yield Label("Create New Project", id="create-project-title")
+        yield Header()
+        with Container(classes="modal-dialog"):
+            yield Label("Create New Project", classes="modal-title")
             yield Input(placeholder="Project Name", id="project-name-input")
             yield Label("", id="create-error", classes="error-label hidden")
 
-            with Horizontal(id="create-project-buttons"):
+            with Horizontal(classes="modal-footer-actions"):
                 yield Button("Cancel", variant="default", id="btn-cancel")
                 yield Button("Create", variant="primary", id="btn-create")
+        yield Footer()
 
     def on_mount(self) -> None:
-        """Called when the screen is mounted."""
+        """Focuses the project name input on mount."""
         self.query_one("#project-name-input").focus()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handles button press events.
+    @on(Button.Pressed, "#btn-create")
+    def action_submit(self) -> None:
+        """Validates and processes the project creation request."""
+        name = self.query_one("#project-name-input", Input).value.strip()
+        error_label = self.query_one("#create-error", Label)
 
-        Args:
-            event: The button pressed event.
-        """
-        if event.button.id == "btn-cancel":
-            self.action_cancel()
-        elif event.button.id == "btn-create":
-            self.create_project()
-
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handles enter key in input field.
-
-        Args:
-            event: The input submitted event.
-        """
-        self.create_project()
-
-    def create_project(self) -> None:
-        """Validates input and attempts to create the project directory."""
-        name_input = self.query_one("#project-name-input", Input)
-        name = name_input.value.strip()
         if not name:
-            self.show_error("Project name cannot be empty.")
+            error_label.update("Project name cannot be empty")
+            error_label.remove_class("hidden")
             return
 
-        project_path = get_project_root() / name
-
+        project_path = self.project_root / name
         if project_path.exists():
-            self.show_error("Project already exists.")
+            error_label.update("Directory already exists")
+            error_label.remove_class("hidden")
             return
 
         try:
-            os.makedirs(project_path)
-            self.dismiss()
-            self.on_created_callback(name)
+            project_path.mkdir(parents=True, exist_ok=True)
+            self.dismiss(project_path)
         except Exception as e:
-            self.show_error(f"Error: {e}")
+            error_label.update(f"Error: {e}")
+            error_label.remove_class("hidden")
 
-    def show_error(self, message: str) -> None:
-        """Displays an error message to the user.
-
-        Args:
-            message: The error description.
-        """
-        lbl = self.query_one("#create-error", Label)
-        lbl.update(message)
-        lbl.remove_class("hidden")
-
+    @on(Button.Pressed, "#btn-cancel")
     def action_cancel(self) -> None:
-        """Cancels the action and closes the modal."""
-        self.dismiss()
+        """Cancels the project creation and dismisses the modal."""
+        self.dismiss(None)

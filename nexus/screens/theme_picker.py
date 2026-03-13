@@ -1,26 +1,27 @@
 """Screen for selecting the application theme.
 
-Provides a modal list of available themes with live preview capability.
+Provides a modal interface to browse available themes with real time 
+preview functionality using the Textual OptionList widget.
 """
 
 from typing import Any, Callable
+from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import ModalScreen
-from textual.widgets import Label, ListItem, ListView
+from textual.widgets import Label, OptionList, Header, Footer
+from textual.widgets.option_list import Option
 
 
-class ThemePicker(ModalScreen[None]):
-    """A modal screen for selecting a theme with live preview.
+class ThemePicker(ModalScreen[str | None]):
+    """A modal screen for theme selection and preview.
 
     Attributes:
-        themes: List of available theme CSS classes.
-        original_theme: The theme active when the picker was opened.
-        on_preview_callback: Callback function to apply a preview theme.
+        themes: List of available theme CSS identifiers.
+        original_theme: The theme that was active when the picker was opened.
+        on_preview_callback: Function called to apply a preview theme.
     """
-
-    CSS_PATH = "../style.tcss"
 
     def __init__(
         self, themes: list[str], current_theme: str, on_preview: Callable[[str], None], **kwargs: Any
@@ -29,9 +30,9 @@ class ThemePicker(ModalScreen[None]):
 
         Args:
             themes: List of available theme CSS class names.
-            current_theme: The currently active theme class name.
-            on_preview: Callback to receive the selected theme string for preview.
-            **kwargs: Additional arguments passed to ModalScreen.
+            current_theme: The active theme class name.
+            on_preview: Callback function to preview a selected theme.
+            **kwargs: Additional keyword arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
         self.themes = themes
@@ -39,63 +40,60 @@ class ThemePicker(ModalScreen[None]):
         self.on_preview_callback = on_preview
 
     BINDINGS = [
+        Binding("enter", "select", "Confirm"),
         Binding("escape", "cancel", "Cancel"),
     ]
 
     def compose(self) -> ComposeResult:
-        """Composes the screen layout.
+        """Composes the visual layout of the theme picker.
 
         Returns:
-            A ComposeResult containing the widget tree.
+            A ComposeResult containing the visual widget hierarchy.
         """
-        with Container(id="theme-picker-dialog"):
-            yield Label("Select Theme", id="theme-picker-title")
-            yield ListView(id="theme-list")
-            yield Label("Esc: Cancel • Enter: Confirm", classes="modal-footer")
+        yield Header()
+        with Container(classes="modal-dialog"):
+            yield Label("Select Theme", classes="modal-title")
+            yield OptionList(id="theme-option-list")
+        yield Footer()
 
     def on_mount(self) -> None:
-        """Called when the screen is mounted.
-
-        Populates the list of themes.
-        """
-        list_view = self.query_one("#theme-list", ListView)
+        """Populates the list of themes and selects the current theme."""
+        option_list = self.query_one("#theme-option-list", OptionList)
+        
         for theme in self.themes:
-            # Clean up theme name for display (e.g., "theme-dark" -> "Tokyo Night Dark")
-            suffix = theme.replace("theme-", "").title()
-            display_name = f"Tokyo Night {suffix}"
-            item = ListItem(Label(display_name))
-            list_view.append(item)
+            display_name = theme.replace("theme-", "").title()
+            option_list.add_option(Option(display_name, id=theme))
 
-        # Select current theme
         try:
             current_index = self.themes.index(self.original_theme)
-            list_view.index = current_index
+            option_list.highlighted = current_index
         except ValueError:
-            list_view.index = 0
+            option_list.highlighted = 0
+            
+        option_list.focus()
 
-    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        """Previews the confirmed theme when highlighted.
+    @on(OptionList.OptionHighlighted)
+    def _on_theme_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+        """Triggers a theme preview when a theme is highlighted in the list."""
+        if event.option_index is not None:
+            new_theme = self.themes[event.option_index]
+            self.on_preview_callback(new_theme)
 
-        Args:
-            event: The highlight event.
-        """
-        if event.list_view.index is not None:
-            # Prevent index out of bounds if list changes (unlikely)
-            if 0 <= event.list_view.index < len(self.themes):
-                new_theme = self.themes[event.list_view.index]
-                self.on_preview_callback(new_theme)
+    @on(OptionList.OptionSelected)
+    def _on_theme_selected(self, event: OptionList.OptionSelected) -> None:
+        """Confirms and applies the selected theme."""
+        if event.option_index is not None:
+            new_theme = self.themes[event.option_index]
+            self.dismiss(new_theme)
 
-    def on_list_view_selected(self, event: ListView.Selected) -> None:
-        """Confirms the selected theme.
-
-        Args:
-            event: The selection event.
-        """
-        # Theme is already applied by highlight, just close
-        self.dismiss()
+    def action_select(self) -> None:
+        """Confirms selection (used by footer)."""
+        option_list = self.query_one("#theme-option-list", OptionList)
+        if option_list.highlighted is not None:
+            new_theme = self.themes[option_list.highlighted]
+            self.dismiss(new_theme)
 
     def action_cancel(self) -> None:
-        """Reverts the theme choice and closes the picker."""
+        """Reverts the theme to the original state and dismisses the modal."""
         self.on_preview_callback(self.original_theme)
-        self.dismiss()
-
+        self.dismiss(None)

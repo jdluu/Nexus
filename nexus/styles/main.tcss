@@ -1,0 +1,185 @@
+/* --- GLOBAL APPLICATION STYLES --- */
+
+Screen {
+    background: $background;
+    color: $foreground;
+    layout: vertical;
+}
+
+#tool-search {
+    dock: top;
+    height: 3;
+    width: 100%;
+    background: $background;
+    color: $foreground;
+    border: tall $primary;
+    content-align: left middle;
+    padding: 0 1;
+}
+
+#tool-search:focus {
+    border: tall $secondary;
+}
+
+ToolBrowser {
+    height: 1fr;
+    width: 100%;
+    layout: horizontal;
+    border-top: solid $foreground 10%;
+}
+
+#left-pane {
+    width: 30%;
+    height: 100%;
+    border-right: solid $foreground 10%;
+    layout: vertical;
+}
+
+#right-pane {
+    width: 70%;
+    height: 100%;
+}
+
+.pane-header-container {
+    height: 3;
+    border-bottom: solid $foreground 10%;
+    content-align: left middle;
+}
+
+.pane-header {
+    padding: 0 1;
+    text-style: bold;
+    color: $primary;
+}
+
+.pane-header-right {
+    color: $foreground 50%;
+    text-align: right;
+    width: 1fr;
+    padding-right: 1;
+}
+
+ListView, OptionList {
+    height: 1fr;
+    background: transparent;
+    border: none;
+}
+
+.option-list--option {
+    padding: 0 1;
+    color: $foreground;
+}
+
+.option-list--option:hover {
+    background: $primary 10%;
+}
+
+.option-list--option-highlighted {
+    background: $primary 20%;
+}
+
+/* --- INTERACTIVITY --- */
+
+/* Focused Highlight */
+ListView:focus > ListItem.--highlight,
+OptionList:focus > .option-list--option-highlighted {
+    background: $primary;
+    color: $background;
+    text-style: bold;
+}
+
+OptionList:focus > .option-list--option-highlighted * {
+    color: $background;
+}
+
+#tool-description {
+    dock: bottom;
+    height: 1;
+    width: 100%;
+    background: $background;
+    color: $secondary;
+    text-style: bold italic;
+    content-align: center middle;
+    border-top: solid $foreground 10%;
+}
+
+/* --- RESPONSIVE MODAL SYSTEM --- */
+
+ModalScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-dialog {
+    width: 80%;
+    max-width: 80;
+    height: auto;
+    max-height: 85%;
+    border: thick $primary;
+    background: $surface;
+    padding: 1 2;
+    margin: 1 2;
+    layout: vertical;
+}
+
+.modal-title {
+    width: 100%;
+    content-align: center middle;
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+    border-bottom: solid $foreground 10%;
+    height: 3;
+}
+
+.modal-footer-actions {
+    height: 3;
+    align: right middle;
+    margin-top: 1;
+}
+
+/* Specific Modal Adjustments */
+
+#help-content {
+    height: 1fr;
+    margin: 1 0;
+}
+
+#theme-option-list, #advanced-directory-tree {
+    height: 15;
+    max-height: 1fr;
+    border: solid $primary 50%;
+}
+
+#quit-label, #error-message {
+    width: 100%;
+    content-align: center middle;
+    margin: 1 0;
+    text-style: bold;
+}
+
+#error-details {
+    background: $background;
+    color: $error;
+    padding: 1;
+    margin: 1 0;
+    border: dashed $error;
+}
+
+/* --- UTILITIES --- */
+
+.error-label {
+    color: $error;
+    text-style: bold;
+    margin-top: 1;
+}
+
+/* Categories */
+.category-DEV Label { color: $primary; }
+.category-AI Label { color: $secondary; }
+.category-MEDIA Label { color: $success; }
+.category-UTIL Label { color: $warning; }
+
+.hidden {
+    display: none;
+}

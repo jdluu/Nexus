@@ -1,63 +1,69 @@
 """Help screen for the Nexus application.
 
-Displays information about key bindings and usage.
+Displays information regarding user interface interactions and global 
+key bindings using the modern Collapsible widget from Textual.
 """
 
+from textual import on
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Markdown
+from textual.widgets import Button, Label, Markdown, Collapsible, Header, Footer
 
 
 class HelpScreen(ModalScreen[None]):
-    """A modal screen that displays help and key bindings."""
-
-    CSS_PATH = "../style.tcss"
+    """A modal screen that displays help documentation and key bindings."""
 
     BINDINGS = [
-        ("escape", "dismiss", "Close"),
-        ("q", "dismiss", "Close"),
+        Binding("escape", "dismiss", "Close"),
+        Binding("q", "dismiss", "Close", show=False),
     ]
 
     def compose(self) -> ComposeResult:
-        """Composes the screen layout.
+        """Composes the visual layout of the help screen.
 
         Returns:
-            A ComposeResult containing the widget tree.
+            A ComposeResult containing the documentation widgets.
         """
-        with Vertical(id="help-dialog"):
-            with Horizontal(id="help-title-container"):
-                yield Label("Nexus Help", id="help-title")
+        yield Header()
+        with Vertical(classes="modal-dialog"):
+            yield Label("Nexus Help", classes="modal-title")
 
-            with Vertical(id="help-content"):
-                yield Markdown(
-                    """
-**Navigation**
-- `↑ / ↓` : Navigate lists
-- `← / →` : Switch between Categories and Tool List
+            with VerticalScroll(id="help-content"):
+                with Collapsible(title="Navigation", collapsed=False):
+                    yield Markdown(
+                        """
+- `Up / Down` : Navigate lists
+- `Left / Right` : Switch between Categories and Tool List
 - `Enter` : Select Category or Launch Tool
-
-**Search**
+- `Esc` : Return to previous view
+                        """
+                    )
+                
+                with Collapsible(title="Search"):
+                    yield Markdown(
+                        """
 - Type any character to start searching tools.
-- `Esc` : Clear search or Go Back.
+- `Ctrl+P` : Open the global Command Palette.
+                        """
+                    )
 
-**Actions**
-- `Ctrl+F` : Toggle Favorite
-- `Ctrl+T` : Open Theme Picker
-- `Ctrl+C` : Quit Application
-- `Ctrl+H` or `?` : Show this Help Screen
-                    """
-                )
+                with Collapsible(title="Actions"):
+                    yield Markdown(
+                        """
+- `Ctrl+T` : Open the Theme Picker
+- `Ctrl+Q` : Exit the application
+- `F1` : Display this help screen
+                        """
+                    )
 
-            with Horizontal(id="help-footer"):
+            with Horizontal(classes="modal-footer-actions"):
                 yield Button("Close", variant="primary", id="btn-close")
+        
+        yield Footer()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handles button press events.
-
-        Args:
-            event: The button pressed event.
-        """
-        if event.button.id == "btn-close":
-            self.dismiss()
-
+    @on(Button.Pressed, "#btn-close")
+    def _on_close(self) -> None:
+        """Handles the close button click."""
+        self.dismiss()
