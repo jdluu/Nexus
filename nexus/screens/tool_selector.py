@@ -1,19 +1,20 @@
 """Main screen for tool selection and launching.
 
-Displays a categorized list of tools and handles user navigation, searching,
-and execution.
+Displays a categorized list of tools separated by type. Allows searching,
+filtering, and keyboard navigation.
 """
 
+from pathlib import Path
+from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal
-from textual.events import Key, Resize
+from textual.events import Key
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import Label
+from textual.widgets import Label, Header, Footer, Input
+
 
 from nexus.models import Tool
-from nexus.widgets.footer import NexusFooter, KeyBadge
 from nexus.widgets.tool_browser import ToolBrowser
 
 
@@ -24,109 +25,109 @@ class ToolSelector(Screen[None]):
     filtering, and keyboard navigation.
     """
 
-    CSS_PATH = "../style.tcss"
-
     # Reactive search query
     search_query = reactive("")
 
+    # Screen-specific bindings. 
+    # Global bindings (Quit, Theme, Help, Palette) are handled by NexusApp with priority=True.
     BINDINGS = [
-        Binding("ctrl+t", "show_theme_picker", "Theme"),
-        Binding("ctrl+f", "toggle_favorite", "Favorite"),
-        Binding("escape", "clear_search", "Clear Search"),
-        Binding("down", "cursor_down", "Next Item", show=False),
-        Binding("up", "cursor_up", "Previous Item", show=False),
-        Binding("right", "cursor_right", "Enter List", show=False),
-        Binding("left", "cursor_left", "Back to Categories", show=False),
-        Binding("enter", "launch_current", "Launch Tool", show=False),
-        Binding("backspace", "delete_char", "Delete Character", show=False),
-        Binding("?", "show_help", "Help"),
-        Binding("ctrl+h", "show_help", "Help", show=False), 
-        Binding("h", "show_help", "Help", show=False), 
-        Binding("f1", "show_help", "Help"),
+        Binding("enter", "launch", "Launch", show=True),
+        Binding("down", "cursor_down", "Next", show=False),
+        Binding("up", "cursor_up", "Prev", show=False),
+        Binding("right", "cursor_right", "List", show=False),
+        Binding("left", "cursor_left", "Categories", show=False),
+        # Numeric quick launch
+        Binding("1", "launch_idx(0)", "Launch 1", show=False),
+        Binding("2", "launch_idx(1)", "Launch 2", show=False),
+        Binding("3", "launch_idx(2)", "Launch 3", show=False),
+        Binding("4", "launch_idx(3)", "Launch 4", show=False),
+        Binding("5", "launch_idx(4)", "Launch 5", show=False),
+        Binding("6", "launch_idx(5)", "Launch 6", show=False),
+        Binding("7", "launch_idx(6)", "Launch 7", show=False),
+        Binding("8", "launch_idx(7)", "Launch 8", show=False),
+        Binding("9", "launch_idx(8)", "Launch 9", show=False),
     ]
 
     def compose(self) -> ComposeResult:
         """Composes the screen layout."""
-        with Horizontal(id="header"):
-            yield Label(
-                "Nexus",
-                id="header-left",
-            )
-            yield Label("Type to search tools...", id="tool-search")
-
-        yield ToolBrowser(id="tool-browser")
-
+        yield Header()
+        yield Input(placeholder="Search tools...", id="tool-search")
+        yield ToolBrowser(id="tool-browser").data_bind(search_query=ToolSelector.search_query)
         yield Label("", id="tool-description")
-
-        yield NexusFooter()
-
-    # --- Theme Management ---
-    THEMES = ["theme-light", "theme-dark", "theme-storm"]
-    current_theme_index = 0
-
-    def action_show_theme_picker(self) -> None:
-        """Opens the theme picker modal."""
-        def apply_theme(new_theme: str) -> None:
-            self.set_theme(new_theme)
-
-        from nexus.screens.theme_picker import ThemePicker
-        current_theme = self.THEMES[self.current_theme_index]
-        self.app.push_screen(ThemePicker(self.THEMES, current_theme, apply_theme))
-
-    def set_theme(self, new_theme: str) -> None:
-        """Sets the current theme for the application."""
-        for theme in self.THEMES:
-            if theme in self.classes:
-                self.remove_class(theme)
-
-        self.add_class(new_theme)
-
-        if new_theme in self.THEMES:
-            self.current_theme_index = self.THEMES.index(new_theme)
-
-        suffix = new_theme.replace("theme-", "").title()
-        self.notify(f"Theme: {suffix}")
+        yield Footer()
 
     def on_mount(self) -> None:
         """Called when the screen is mounted."""
-        self.add_class(self.THEMES[self.current_theme_index])
-        
         # Report any config errors from loading phase
-        from nexus.config import CONFIG_ERRORS
-        for error in CONFIG_ERRORS:
+        from nexus.container import get_container
+        for error in get_container().config_manager.config_errors:
             self.app.notify(error, title="Config Error", severity="error", timeout=5.0)
+        
+        self.query_one("#tool-search").focus()
 
-    # --- Search & Filter ---
+    # --- Actions ---
 
-    def watch_search_query(self, old_value: str, new_value: str) -> None:
-        """Reacts to changes in the search query."""
-        try:
-            feedback = self.query_one("#tool-search", Label)
-            browser = self.query_one(ToolBrowser)
-        except Exception:
-            return
+    def action_launch(self) -> None:
+        """Launches the currently highlighted tool."""
+        tool = self.query_one(ToolBrowser).get_current_selection()
+        if tool:
+            self.launch_tool_flow(tool)
 
-        browser.search_query = new_value
+    def action_launch_idx(self, idx: int) -> None:
+        """Launches a tool by its index in the current list."""
+        # Only launch by number if not currently typing in the search box
+        if not self.query_one("#tool-search").has_focus or not self.search_query:
+            tool = self.query_one(ToolBrowser).get_tool_at_index(idx)
+            if tool:
+                self.launch_tool_flow(tool)
 
-        if new_value:
-            feedback.update(f"SEARCH: {new_value}_")
-        else:
-            feedback.update("Type to search tools...")
+    # --- Navigation delegation ---
 
-    def action_delete_char(self) -> None:
-        """Deletes the last character from search query."""
-        if self.search_query:
-            self.search_query = self.search_query[:-1]
+    def action_cursor_down(self) -> None:
+        """Delegates navigation to the browser."""
+        self.query_one(ToolBrowser).focus_next()
 
-    def action_clear_search(self) -> None:
-        """Clears the search input."""
-        if self.search_query:
-            self.search_query = ""
+    def action_cursor_up(self) -> None:
+        """Delegates navigation to the browser."""
+        self.query_one(ToolBrowser).focus_prev()
+
+    def action_cursor_right(self) -> None:
+        """Navigates focus to the right pane."""
+        self.query_one(ToolBrowser).focus_right()
+
+    def action_cursor_left(self) -> None:
+        """Navigates focus to the left pane."""
+        self.query_one(ToolBrowser).focus_left()
+
+    # --- Event Handlers ---
+
+    @on(Input.Changed, "#tool-search")
+    def _on_search_changed(self, event: Input.Changed) -> None:
+        """Reacts to changes in the search input."""
+        self.search_query = event.value
+
+    @on(Input.Submitted, "#tool-search")
+    def _on_search_submitted(self) -> None:
+        """Launch selection on enter."""
+        self.action_launch()
+
+    @on(ToolBrowser.ToolHighlighted)
+    def _on_tool_highlighted(self, message: ToolBrowser.ToolHighlighted) -> None:
+        """Update description when a tool is highlighted."""
+        self.query_one("#tool-description", Label).update(
+            f"{message.tool.label}: {message.tool.description}"
+        )
+
+    @on(ToolBrowser.ToolSelected)
+    def _on_tool_selected(self, message: ToolBrowser.ToolSelected) -> None:
+        """Launch tool when selected."""
+        self.launch_tool_flow(message.tool)
 
     def on_key(self, event: Key) -> None:
-        """Global key handler for type-to-search and numeric quick launch."""
+        """Global key handler for numeric quick launch."""
         # Numeric keys 1-9 for quick launch
-        if event.key in "123456789":
+        # We only trigger if search query is empty to avoid conflict with typing numbers in search
+        if event.key in "123456789" and not self.search_query:
             idx = int(event.key) - 1
             browser = self.query_one(ToolBrowser)
             tool = browser.get_tool_at_index(idx)
@@ -135,106 +136,34 @@ class ToolSelector(Screen[None]):
                 event.stop()
                 return
 
-        if event.key.isprintable() and len(event.key) == 1:
-            # Append char to query
-            self.search_query += event.key
-            event.stop()
-
-    # --- Navigation delegation ---
-
-    def action_cursor_down(self) -> None:
-        self.query_one(ToolBrowser).focus_next()
-
-    def action_cursor_up(self) -> None:
-        self.query_one(ToolBrowser).focus_prev()
-
-    def action_cursor_right(self) -> None:
-        self.query_one(ToolBrowser).focus_right()
-
-    def action_cursor_left(self) -> None:
-        self.query_one(ToolBrowser).focus_left()
-
-    def action_launch_current(self) -> None:
-        tool = self.query_one(ToolBrowser).get_current_selection()
-        if tool:
-            self.launch_tool_flow(tool)
-        elif self.search_query:
-            # If nothing selected but search is active, maybe launch top hit?
-            # For now, do nothing.
-            pass
-
-    def action_toggle_favorite(self) -> None:
-        tool = self.query_one(ToolBrowser).get_current_selection()
-        if tool:
-            from nexus.app import NexusApp
-            if isinstance(self.app, NexusApp):
-                self.app.container.state_manager.toggle_favorite(tool.command)
-                self.query_one(ToolBrowser).refresh_tools()
-                self.notify("Toggled Favorite")
-
-    def action_show_help(self) -> None:
-        from nexus.screens.help import HelpScreen
-        self.app.push_screen(HelpScreen())
-
-    # --- Responsive Design ---
-
-    def on_resize(self, event: Resize) -> None:
-        """Called when the screen is resized."""
-        # ToolBrowser responsive mode
-        browser = self.query_one(ToolBrowser)
-        if event.size.width < 100:
-            browser.add_class("compact")
-        else:
-            browser.remove_class("compact")
-
-        # Footer responsive mode - No longer needed for minimal footer
-        # The minimal footer centers automatically and wraps gracefully if needed.
-        pass
-
-    # --- Message Handlers from ToolBrowser ---
-
-    def on_tool_browser_tool_highlighted(self, message: ToolBrowser.ToolHighlighted) -> None:
-        """Update description when a tool is highlighted."""
-        self.query_one("#tool-description", Label).update(
-            f"{message.tool.label}: {message.tool.description}"
-        )
-
-    def on_tool_browser_tool_selected(self, message: ToolBrowser.ToolSelected) -> None:
-        """Launch tool when selected."""
-        self.launch_tool_flow(message.tool)
-
-    # --- Footer Interaction ---
-
-    def on_key_badge_pressed(self, message: KeyBadge.Pressed) -> None:
-        """Handle clicks on footer key badges."""
-        action = message.action
-        if action == "launch_current":
-            self.action_launch_current()
-        elif action == "toggle_favorite":
-            self.action_toggle_favorite()
-        elif action == "show_help":
-            self.action_show_help()
-        elif action == "app.quit":
-            self.app.exit()
-            
     # --- Launch Logic ---
 
     def launch_tool_flow(self, tool: Tool) -> None:
-        """Handles the flow for launching a tool."""
+        """Manages the workflow for initiating a tool execution."""
         if tool.requires_project:
             from nexus.screens.project_picker import ProjectPicker
             self.app.push_screen(ProjectPicker(tool))
+        elif tool.supports_flags:
+            from nexus.screens.flag_picker import FlagPicker
+            self.app.push_screen(
+                FlagPicker(tool.label), 
+                callback=lambda f: self.execute_tool_command(tool, flags=f) if f is not None else None
+            )
         else:
             self.execute_tool_command(tool)
 
-    def execute_tool_command(self, tool: Tool) -> None:
-        """Executes the tool command with suspend context."""
+    def execute_tool_command(
+        self, 
+        tool: Tool, 
+        project_path: Path | None = None, 
+        flags: str | None = None
+    ) -> None:
+        """Executes the tool command within a suspended TUI context."""
         with self.app.suspend():
-            from nexus.app import NexusApp
-            if isinstance(self.app, NexusApp):
-                success = self.app.container.executor.launch_tool(tool.command)
-            else:
-                success = False
+            from nexus.container import get_container
+            success = get_container().executor.launch_tool(
+                tool.command, project_path=project_path, flags=flags
+            )
 
             if not success:
                 self.app.notify(f"Failed to launch {tool.label}", severity="error")

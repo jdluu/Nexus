@@ -4,48 +4,82 @@ Allows users to browse potential project directories and choose one as the
 context for a tool execution. Also supports creating new projects.
 """
 
-
-
-from nexus.config import get_project_root
-from nexus.models import Project, Tool
+from pathlib import Path
 from typing import Any
-from nexus.widgets.tool_list_item import ProjectListItem
-from nexus.widgets.footer import NexusFooter, KeyBadge
+
+from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container
-from textual.screen import Screen
-from textual.widgets import Header, Input, Label, ListItem, ListView, LoadingIndicator
-from thefuzz import process
+from textual.binding import Binding
+from textual.containers import Container, Horizontal, Vertical
+from textual.screen import ModalScreen, Screen
+from textual.widgets import (
+    Button,
+    DirectoryTree,
+    Header,
+    Footer,
+    Input,
+    Label,
+    ListItem,
+    ListView,
+)
+
+from nexus.models import Project, Tool
+
+
+class AdvancedBrowseModal(ModalScreen[Path | None]):
+    """A modal screen providing a full filesystem browser."""
+
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        from nexus.app import NexusApp
+        root = Path.home()
+        if isinstance(self.app, NexusApp):
+            root = self.app.container.config_manager.get_project_root()
+
+        yield Header()
+        with Container(classes="modal-dialog"):
+            yield Label("Advanced Project Browser", classes="modal-title")
+            yield DirectoryTree(root, id="advanced-directory-tree")
+        yield Footer()
+
+    @on(DirectoryTree.DirectorySelected)
+    def on_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        self.dismiss(event.path)
+
+    @on(DirectoryTree.FileSelected)
+    def on_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        self.dismiss(event.path)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
 
 
 class ProjectPicker(Screen[None]):
-    """Screen for selecting a project directory.
-
-    Displays a searchable list of projects found in the configured root directory.
-    Allows creating new projects or selecting an existing one.
+    """Screen for choosing or creating a project directory.
 
     Attributes:
-        selected_tool: The tool that was selected and requires a project context.
-        projects: List of discovered projects.
+        tool: The Tool model being launched.
+        _filtered_projects: Cached list of matching projects.
     """
 
-    def __init__(self, selected_tool: Tool, **kwargs: Any):
-        """Initializes the ProjectPicker.
+    def __init__(self, tool: Tool, **kwargs: Any):
+        """Initializes the ProjectPicker screen.
 
         Args:
-            selected_tool: The tool that was selected and requires a project context.
-            **kwargs: Additional arguments passed to the Screen.
+            tool: The tool requiring a project context.
+            **kwargs: Additional keyword arguments passed to Screen.
         """
         super().__init__(**kwargs)
-        self.selected_tool = selected_tool
-        self.projects: list[Project] = []
+        self.tool = tool
+        self._filtered_projects: list[Project | str] = []
 
     BINDINGS = [
-        ("down", "cursor_down", "Next Item"),
-        ("up", "cursor_up", "Previous Item"),
-        ("enter", "select_current", "Select"),
-        ("ctrl+b", "back", "Back"),
-        ("ctrl+c", "quit", "Quit"),
+        Binding("enter", "select", "Select"),
+        Binding("ctrl+b", "browse", "Browse"),
+        Binding("escape", "app.back", "Back", show=True),
     ]
 
     def compose(self) -> ComposeResult:
@@ -55,217 +89,137 @@ class ProjectPicker(Screen[None]):
             The widget tree for the screen.
         """
         yield Header()
-        yield Container(
-            Label(f"Select Project for {self.selected_tool.label}", id="title"),
-            id="title-container",
-        )
-        yield Input(placeholder="Search projects...", id="project-search")
-        with Container(id="list-container"):
-            yield LoadingIndicator(id="loading-spinner")
+        yield Label(f"Launch {self.tool.label}", id="project-picker-header")
+        yield Input(placeholder="Search or filter projects...", id="project-search")
+        
+        with Vertical(id="project-list-container"):
+            yield Label("Project History", classes="section-header")
             yield ListView(id="project-list")
             yield Label(
-                "No projects found", id="projects-empty", classes="empty-state hidden"
+                "No recent projects. Use 'Browse' to find one.",
+                id="projects-empty",
+                classes="empty-state hidden"
             )
-        yield NexusFooter(key_defs=[
-            ("Enter", "Select", "select_current"),
-            ("Ctrl+B", "Back", "back"),
-            ("Ctrl+C", "Quit", "quit"),
-        ])
 
-    async def on_mount(self) -> None:
-        """Called when the screen is mounted.
+        with Horizontal(id="project-picker-footer"):
+            yield Button("Browse Filesystem (Ctrl+B)", variant="default", id="btn-browse")
+            yield Button("Create New Project", variant="primary", id="btn-create")
+        
+        yield Footer()
 
-        Initiates an asynchronous scan of the project root directory.
-        """
-        self.query_one("#project-list").display = False
+    def on_mount(self) -> None:
+        """Initializes the project list on mount."""
+        self.refresh_projects()
         self.query_one("#project-search").focus()
 
-        root = get_project_root()
-        from nexus.app import NexusApp
-
-        if isinstance(self.app, NexusApp):
-            self.projects = await self.app.container.scanner.scan_projects(root)
-
-        self.populate_list()
-        self.query_one("#loading-spinner").display = False
-        self.query_one("#project-list").display = True
-
-    def populate_list(self, filter_text: str = "") -> None:
-        """Populates the project list, processing the filter text.
+    @work(thread=True)
+    async def refresh_projects(self, filter_text: str = "") -> None:
+        """Asynchronously updates the project list.
 
         Args:
-            filter_text: Text to filter project names by.
+            filter_text: Optional query to filter projects.
         """
-        project_list = self.query_one("#project-list", ListView)
-        project_list.clear()
-
-        # Add "Create New Project" option
-        if not filter_text:
-            new_item = ProjectListItem(is_create_new=True)
-            project_list.append(new_item)
-
-            # --- Recents Section ---
-            from nexus.app import NexusApp
-            if isinstance(self.app, NexusApp):
-                recents = self.app.container.state_manager.get_recents()
-                if recents:
-                     # Find project objects for recent paths
-                    recent_projects = []
-                    for path_str in recents:
-                        # Find matching project in discovered list
-                        match = next((p for p in self.projects if str(p.path) == path_str), None)
-                        if match:
-                            recent_projects.append(match)
-                    
-                    if recent_projects:
-                        project_list.append(ListItem(Label("[bold yellow]Recent Projects[/]"), classes="list-item"))
-                        for proj in recent_projects:
-                             project_list.append(ProjectListItem(project_data=proj))
-                        
-                        project_list.append(ListItem(Label("[bold blue]All Projects[/]"), classes="list-item"))
-                        
-                        # Filter out recents from main list to avoid duplication
-                        recent_paths = {str(p.path) for p in recent_projects}
-                        for project in self.projects:
-                            if str(project.path) not in recent_paths:
-                                project_list.append(ProjectListItem(project_data=project))
-                        return
-
-        # --- Fuzzy Search or Default List ---
+        from nexus.container import get_container
+        
+        root = get_container().config_manager.get_project_root()
+        projects = await get_container().scanner.scan_projects(root)
+        recents = get_container().state_manager.get_recents()
+        
+        # Merge scanner results with recents
+        all_paths = set(p.path for p in projects)
+        for r in recents:
+            path_obj = Path(r)
+            if r not in all_paths and path_obj.exists():
+                projects.append(Project(name=path_obj.name, path=path_obj, is_git=False))
+        
         if filter_text:
-            # Prepare data for fuzzy matching
-            choices = {p.name: p for p in self.projects}
-            # extract returns list of (choice, score, key)
-            results = process.extract(filter_text, choices.keys(), limit=20)
-            
-            for name, score in results:
-                if score > 40: # Threshold
-                    project = choices[name]
-                    project_list.append(ProjectListItem(project_data=project))
+            projects = [
+                p for p in projects 
+                if filter_text.lower() in p.name.lower() or filter_text.lower() in str(p.path).lower()
+            ]
+
+        self.app.call_from_thread(self._update_list, projects)
+
+    def _update_list(self, projects: list[Project]) -> None:
+        """Updates the ListView with results.
+
+        Args:
+            projects: The list of project models to display.
+        """
+        list_view = self.query_one("#project-list", ListView)
+        list_view.clear()
+        
+        empty_label = self.query_one("#projects-empty", Label)
+        
+        if not projects:
+            empty_label.remove_class("hidden")
+            list_view.display = False
         else:
-            # Default lexical sort
-            for project in self.projects:
-                project_list.append(ProjectListItem(project_data=project))
+            empty_label.add_class("hidden")
+            list_view.display = True
+            for project in sorted(projects, key=lambda p: p.name.lower()):
+                item = ListItem(Label(f" {project.name} [dim]({project.path})[/]"))
+                # Use a custom attribute to store the path string
+                setattr(item, "project_path", str(project.path))
+                list_view.append(item)
 
-        # Check if list is effectively empty
-        if not project_list.children:
-            project_list.display = False
-            empty_lbl = self.query_one("#projects-empty", Label)
-            empty_lbl.remove_class("hidden")
-            if filter_text:
-                empty_lbl.update(f"No projects matching '{filter_text}'")
-            else:
-                empty_lbl.update("No projects found in root directory.")
-        else:
-            project_list.display = True
-            self.query_one("#projects-empty").add_class("hidden")
+    @on(Input.Changed, "#project-search")
+    def on_search_changed(self, event: Input.Changed) -> None:
+        self.refresh_projects(event.value)
 
-    def on_input_changed(self, event: Input.Changed) -> None:
-        """Called when the project search input changes.
+    @on(ListView.Selected, "#project-list")
+    def on_project_selected(self, event: ListView.Selected) -> None:
+        # Find the path from the item
+        path = getattr(event.item, "project_path", None)
+        if path:
+            self._handle_project_selection(path)
 
-        Args:
-            event: The input changed event.
-        """
-        if event.input.id == "project-search":
-            self.populate_list(event.value)
+    @on(Button.Pressed, "#btn-browse")
+    def action_browse(self) -> None:
+        """Opens the advanced filesystem browser modal."""
+        self.app.push_screen(AdvancedBrowseModal(), callback=self._handle_project_selection)
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Called when Enter is pressed in the search input.
+    @on(Button.Pressed, "#btn-create")
+    def action_create(self) -> None:
+        """Opens the project creation modal."""
+        from nexus.screens.create_project import CreateProject
+        from nexus.app import NexusApp
+        
+        if isinstance(self.app, NexusApp):
+            root = self.app.container.config_manager.get_project_root()
+            self.app.push_screen(CreateProject(root), callback=self._handle_project_selection)
 
-        Args:
-            event: The input submitted event.
-        """
-        self.action_select_current()
-
-    def on_list_view_selected(self, event: ListView.Selected) -> None:
-        """Called when a project is selected from the list.
-
-        Args:
-            event: The selection event.
-        """
-        self._select_item(event.item)
-
-    def _select_item(self, item: Any) -> None:
-        """Internal method to handle item selection logic.
+    def _handle_project_selection(self, path: Path | str | None) -> None:
+        """Processes the final project selection and launches the tool.
 
         Args:
-            item: The selected ListItem.
+            path: The selected directory path.
         """
-        if not isinstance(item, ProjectListItem):
+        if not path:
             return
 
-        if item.is_create_new:
-            from nexus.screens.create_project import CreateProject
+        final_path = Path(path)
+        from nexus.container import get_container
+        get_container().state_manager.add_recent(str(final_path))
+        
+        # Pop back to tool selector and execute
+        from nexus.screens.tool_selector import ToolSelector
+        
+        # We need to find the ToolSelector in the stack
+        for stack_screen in self.app.screen_stack:
+            if isinstance(stack_screen, ToolSelector):
+                # Pop the ProjectPicker and any other modals on top
+                self.app.pop_screen()
+                stack_screen.execute_tool_command(self.tool, project_path=final_path)
+                break
 
-            def on_created(new_project_name: str) -> None:
-                self.app.notify(f"Created project: {new_project_name}")
-                # Refresh list and try to find the new project
-                import asyncio
-
-                async def refresh() -> None:
-                    if isinstance(self.app, NexusApp):
-                        root = get_project_root()
-                        self.projects = await self.app.container.scanner.scan_projects(root)
-                        self.populate_list(filter_text=new_project_name)
-
-                asyncio.create_task(refresh())
-
-            self.app.push_screen(CreateProject(on_created))
-            return
-
-        project = item.project_data
-        if project:
-            with self.app.suspend():
-                from nexus.app import NexusApp
-
-                if isinstance(self.app, NexusApp):
-                    if self.app.container.executor.launch_tool(
-                        self.selected_tool.command, project.path
-                    ):
-                        # Save to Recents
-                        self.app.container.state_manager.add_recent(str(project.path))
-                        pass
-                    else:
-                        self.app.notify(
-                            f"Failed to launch {self.selected_tool.label}", severity="error"
-                        )
-            self.app.refresh()
-            self.app.pop_screen()
-
-    def action_cursor_down(self) -> None:
-        """Moves selection down in the project list."""
-        project_list = self.query_one("#project-list", ListView)
-        if project_list.index is None:
-            project_list.index = 0
-        else:
-            project_list.index = min(
-                len(project_list.children) - 1, project_list.index + 1
-            )
-
-    def action_cursor_up(self) -> None:
-        """Moves selection up in the project list."""
-        project_list = self.query_one("#project-list", ListView)
-        if project_list.index is None:
-            project_list.index = 0
-        else:
-            project_list.index = max(0, project_list.index - 1)
-
-    def action_select_current(self) -> None:
-        """Selects the currently highlighted item."""
-        project_list = self.query_one("#project-list", ListView)
-        if project_list.index is not None:
-            self._select_item(project_list.children[project_list.index])
-            
     def action_back(self) -> None:
         """Go back to the previous screen."""
         self.app.pop_screen()
-            
-    def on_key_badge_pressed(self, message: KeyBadge.Pressed) -> None:
-        """Handle footer clicks."""
-        action = message.action
-        if action == "select_current":
-            self.action_select_current()
-        elif action == "back":
-            self.action_back()
-        elif action == "quit":
-            self.app.exit()
+
+    def action_select(self) -> None:
+        """Selects the currently highlighted project."""
+        list_view = self.query_one("#project-list", ListView)
+        if list_view.has_focus and list_view.index is not None:
+            # We trigger the list view's internal selection mechanism
+            list_view.action_select_cursor()
