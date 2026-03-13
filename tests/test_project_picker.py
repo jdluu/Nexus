@@ -133,11 +133,17 @@ async def test_project_picker_browse_and_create(
             await app.push_screen(screen)
             await pilot.pause(0.1)
 
-            # Mock execute_tool_command to avoid SuspendNotSupported in CI
-            with patch("nexus.screens.tool_selector.ToolSelector.execute_tool_command"):
+            # Mock execute_tool_command and app.suspend to avoid SuspendNotSupported in CI
+            with (
+                patch.object(app, "suspend"),
+                patch(
+                    "nexus.screens.tool_selector.ToolSelector.execute_tool_command"
+                ),
+            ):
                 # Use keyboard shortcut instead of click for better reliability in CI
                 await pilot.press("ctrl+b")
                 await pilot.pause(0.2)
+
 
                 # Should push AdvancedBrowseModal
                 assert isinstance(app.screen, AdvancedBrowseModal)
