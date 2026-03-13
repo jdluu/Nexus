@@ -1,14 +1,19 @@
-"""Tests for the service layer modules."""
+"""Tests for the service layer modules.
+
+This module provides unit tests for the executor and configuration services.
+"""
 
 from unittest.mock import patch
-
+from pathlib import Path
 from nexus import config
 from nexus.services import executor
 
 
 def test_launch_tool_success() -> None:
-    """Test successful tool launch with in-place execution."""
-    # Mocking subprocess.run to return a CompletedProcess with returncode 0
+    """Verifies that a tool is launched successfully.
+
+    Asserts that the subprocess is called with the correctly parsed command.
+    """
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
 
@@ -16,32 +21,32 @@ def test_launch_tool_success() -> None:
         assert result is True
         mock_run.assert_called_once()
         args = mock_run.call_args[0][0]
-        # Should be split command
         assert args == ["echo", "hello"]
 
 
 def test_launch_tool_with_path() -> None:
-    """Test tool launch with a project path."""
-    from pathlib import Path
+    """Verifies that a tool is launched with a specified project path.
 
+    Asserts that the project path is correctly appended to the command.
+    """
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         project_path = Path("/tmp/test_project")
-        # We must mock exists() to return True for the logic to work
         with patch.object(Path, "exists", return_value=True):
             result = executor.launch_tool("nvim", project_path)
 
         assert result is True
         mock_run.assert_called_once()
         args = mock_run.call_args[0][0]
-        # Expect: ['nvim', '/tmp/test_project']
         assert args == ["nvim", str(project_path)]
 
 
 def test_terminal_detection_ordering() -> None:
-    """Test that detection respects priority list."""
-    # Mock shutil.which to only find 'gnome-terminal'
+    """Verifies that terminal detection respects the priority configuration.
+
+    Asserts that the first available terminal in the priority list is returned.
+    """
     with patch("shutil.which") as mock_which:
 
         def side_effect(arg: str) -> str | None:
@@ -51,10 +56,33 @@ def test_terminal_detection_ordering() -> None:
 
         mock_which.side_effect = side_effect
 
-        # We need to test the function directly
         term = config.get_preferred_terminal()
         assert term == "/usr/bin/gnome-terminal"
 
-# Summary:
-# Added module docstring.
-# Kept concise test comments.
+
+def test_launch_tool_with_flags_and_placeholders() -> None:
+    """Verifies that launch_tool correctly replaces {flags} and {project}."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        project_path = Path("/my/project")
+        
+        # Test replace both
+        executor.launch_tool("nvim {flags} {project}", project_path, "--clean")
+        mock_run.assert_called_with(["nvim", "--clean", "/my/project"], cwd=None, check=False)
+        
+        # Test flags appending
+        executor.launch_tool("ls", None, "-la")
+        mock_run.assert_called_with(["ls", "-la"], cwd=None, check=False)
+
+def test_launch_tool_empty_command() -> None:
+    assert executor.launch_tool("") is False
+
+def test_launch_tool_shlex_value_error() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        executor.launch_tool('echo "unclosed quote')
+        mock_run.assert_called_with(["echo", '"unclosed', "quote"], cwd=None, check=False)
+
+def test_launch_tool_file_not_found() -> None:
+    with patch("subprocess.run", side_effect=FileNotFoundError):
+        assert executor.launch_tool("doesnotexist") is False
