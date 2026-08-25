@@ -62,3 +62,6 @@ nexus/tools.local.toml
 tools.local.toml
 *.local.toml
 state.json
+
+# Infisical machine identity (local only)
+.env.infisical

@@ -6,7 +6,7 @@
 INFISICAL_PROJECT_ID ?= b5af8dff-e2cd-492a-bf10-a71ce71deb58
 INFISICAL_ENV ?= prod
 INFISICAL_PATH ?= /Nexus
-INFISICAL_TOKEN_HELPER ?= $(HOME)/projects/infisical-token.sh
+INFISICAL_TOKEN_HELPER ?= $(CURDIR)/scripts/infisical-token.sh
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
